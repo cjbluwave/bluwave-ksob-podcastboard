@@ -12,15 +12,12 @@
       background: #1a2744;
       color: white;
       padding: 20px 32px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
     }
     header h1 { font-size: 1.4rem; font-weight: 700; }
     header p { font-size: 0.85rem; opacity: 0.75; margin-top: 2px; }
 
     .controls {
-      padding: 16px 32px;
+      padding: 14px 32px;
       background: #fff;
       border-bottom: 1px solid #dee2e6;
       display: flex;
@@ -39,51 +36,61 @@
     .controls select:focus, .controls input:focus { border-color: #1a2744; }
 
     .stats {
-      padding: 8px 32px;
+      padding: 6px 32px;
       font-size: 0.8rem;
       color: #6c757d;
       background: #f8f9fa;
+      border-bottom: 1px solid #e9ecef;
     }
 
-    table { width: 100%; border-collapse: collapse; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 700px; }
     thead th {
       background: #1a2744;
       color: white;
       padding: 10px 14px;
       text-align: left;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 600;
       letter-spacing: 0.04em;
       text-transform: uppercase;
       cursor: pointer;
       user-select: none;
+      white-space: nowrap;
     }
     thead th:hover { background: #243260; }
     tbody tr { border-bottom: 1px solid #e9ecef; background: #fff; transition: background 0.1s; }
     tbody tr:hover { background: #f1f3f9; }
     tbody tr.sent-row { background: #f0fff4; }
-    tbody td { padding: 10px 14px; font-size: 0.875rem; vertical-align: middle; }
+    tbody td { padding: 9px 14px; font-size: 0.875rem; vertical-align: middle; }
 
     .badge {
       display: inline-block;
       padding: 2px 8px;
       border-radius: 12px;
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       font-weight: 600;
+      white-space: nowrap;
     }
-    .badge-unresponsive { background: #fff3cd; color: #856404; }
-    .badge-onice { background: #cfe2ff; color: #084298; }
-    .badge-sent { background: #d1e7dd; color: #0a3622; }
-    .badge-other { background: #e9ecef; color: #495057; }
+    .badge-unresponsive   { background: #fff3cd; color: #856404; }
+    .badge-onice          { background: #cfe2ff; color: #084298; }
+    .badge-sent           { background: #d1e7dd; color: #0a3622; }
+    .badge-interested     { background: #e8d5f5; color: #5a1a7a; }
+    .badge-reached3       { background: #ffd6a5; color: #7c3a00; }
+    .badge-reached1       { background: #ffe8cc; color: #7c3a00; }
+    .badge-toreach        { background: #e9ecef; color: #495057; }
+    .badge-coordinating   { background: #c3f0d1; color: #0a3622; }
+    .badge-other          { background: #e9ecef; color: #495057; }
 
     .btn {
-      padding: 5px 10px;
+      padding: 4px 9px;
       border: none;
       border-radius: 5px;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 600;
       cursor: pointer;
       transition: opacity 0.15s, transform 0.1s;
+      white-space: nowrap;
     }
     .btn:active { transform: scale(0.97); }
     .btn-copy { background: #e9ecef; color: #212529; }
@@ -95,7 +102,7 @@
     .btn-email { background: transparent; border: 1px solid #1a2744; color: #1a2744; }
     .btn-email:hover { background: #1a2744; color: white; }
 
-    .actions { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+    .actions { display: flex; gap: 4px; align-items: center; flex-wrap: nowrap; }
 
     /* Email modal */
     .modal-overlay {
@@ -130,8 +137,9 @@
       line-height: 1.6;
     }
     .modal-actions { display: flex; gap: 8px; margin-top: 14px; justify-content: flex-end; }
-    .btn-close-modal { background: #e9ecef; color: #212529; }
+    .btn-close-modal { background: #e9ecef; color: #212529; padding: 7px 14px; }
     .btn-close-modal:hover { background: #dee2e6; }
+    .btn-modal-copy { padding: 7px 14px; }
 
     .empty { text-align: center; padding: 40px; color: #6c757d; }
   </style>
@@ -139,19 +147,23 @@
 <body>
 
 <header>
-  <div>
-    <h1>Karma School of Business — Podcast Guest Board</h1>
-    <p>Outreach tracker · BluWave</p>
-  </div>
+  <h1>Karma School of Business — Podcast Guest Board</h1>
+  <p>Outreach tracker · BluWave</p>
 </header>
 
 <div class="controls">
-  <label>Filter by Status:</label>
+  <label>Status:</label>
   <select id="statusFilter">
     <option value="">All</option>
+    <option value="To Reach Out">To Reach Out</option>
+    <option value="Reached Out (1st Attempt)">Reached Out (1st)</option>
+    <option value="Reached Out (3rd Attempt)">Reached Out (3rd)</option>
     <option value="Unresponsive">Unresponsive</option>
     <option value="On Ice">On Ice</option>
-    <option value="Sent">Sent</option>
+    <option value="Interested, but not right now">Interested (not now)</option>
+    <option value="Coordinating (w/ Guest)">Coordinating</option>
+    <option value="Coordinating / More Info">Coordinating / Info</option>
+    <option value="__sent__">Email Sent</option>
   </select>
   <label>Search:</label>
   <input type="text" id="searchInput" placeholder="Name or company..." style="width:200px" />
@@ -159,10 +171,11 @@
 
 <div class="stats" id="stats"></div>
 
+<div class="table-wrap">
 <table id="guestTable">
   <thead>
     <tr>
-      <th onclick="sortBy('name')">Name</th>
+      <th onclick="sortBy('name')"># Name</th>
       <th onclick="sortBy('company')">Company</th>
       <th onclick="sortBy('email')">Email</th>
       <th onclick="sortBy('status')">Status</th>
@@ -171,6 +184,7 @@
   </thead>
   <tbody id="tableBody"></tbody>
 </table>
+</div>
 
 <div class="empty" id="emptyMsg" style="display:none">No guests match the current filters.</div>
 
@@ -181,7 +195,7 @@
     <div class="modal-sub" id="modalSub"></div>
     <pre id="modalBody"></pre>
     <div class="modal-actions">
-      <button class="btn btn-copy" id="modalCopyBtn" onclick="copyModalEmail()">Copy Email</button>
+      <button class="btn btn-copy btn-modal-copy" id="modalCopyBtn" onclick="copyModalEmail()">Copy Email</button>
       <button class="btn btn-close-modal" onclick="closeModal()">Close</button>
     </div>
   </div>
@@ -189,77 +203,194 @@
 
 <script>
 const GUESTS = [
-  { name: "TBD @Main Post", company: "Main Post Partners", email: "thyland@mainpostpartners.com", status: "Unresponsive" },
-  { name: "Joe Rondinelli", company: "Frontenac", email: "jrondinelli@frontenac.com", status: "Unresponsive" },
-  { name: "Nickie Norris", company: "New Heritage Capital", email: "nnorris@newheritagecapital.com", status: "Unresponsive" },
-  { name: "Eric Keen", company: "Council Capital", email: "ekeen@councilcapital.com", status: "Unresponsive" },
-  { name: "TBD @ Summit Partners", company: "Summit Partners", email: "jgutman@summitpartners.com", status: "Unresponsive" },
-  { name: "TBD @ TA Associates", company: "TA Associates", email: "mbenoit@ta.com", status: "Unresponsive" },
-  { name: "Thomas Groh", company: "Altus Capital Partners", email: "tgroh@altuscapitalpartners.com", status: "Unresponsive" },
-  { name: "Rene Stewart", company: "Vista Equity Partners", email: "rstewart@vistaequitypartners.com", status: "Unresponsive" },
-  { name: "Rajeev Amara", company: "Arcline Investment Management", email: "Arcline-JF@joelefrank.com", status: "Unresponsive" },
-  { name: "Allison Fiore", company: "The Cortec Group", email: "", status: "On Ice" },
-  { name: "Kelly Cornelus", company: "LaSalle Capital & Senior Advisor", email: "kcornelis@lasallecapital.com", status: "On Ice" },
-  { name: "Colleen Gurda", company: "Riveter Capital", email: "colleen@rivetercapital.com", status: "On Ice" },
-  { name: "Paul Swaney III", company: "Swaney Group Capital", email: "megan@swaneygroup.com", status: "On Ice" },
-  { name: "Mitchell Green", company: "Lead Edge Capital", email: "mesposito@moxiegrouppr.com", status: "On Ice" },
-  { name: "Matt McLain", company: "Victor Capital Partners", email: "mmclain@victorcapitalpartners.com", status: "On Ice" },
-  { name: "Michael Fieldstone", company: "Aterian Investment Partners", email: "mfieldstone@aterianpartners.com", status: "On Ice" },
-  { name: "Geri House", company: "Platform Partners", email: "ghouse@platformllc.com", status: "On Ice" },
-  { name: "Richard Elder", company: "The Carlyle Group", email: "richard.elder@carlyle.com", status: "On Ice" },
-  { name: "Ann Chung", company: "Blackstone Growth", email: "ann.chung@blackstone.com", status: "On Ice" },
-  { name: "Jene Elzie", company: "Dunes Point Capital", email: "jene.elzie@dunespointcapital.com", status: "On Ice" },
-  { name: "Erik Dykema", company: "Lineage Capital", email: "erik@lineagecap.com", status: "Unresponsive" },
-  { name: "TBD @ Aterian Investment", company: "Aterian Investment Partners", email: "cremmel@aterianpartners.com", status: "Unresponsive" },
-  { name: "TBD @ Cressey", company: "Cressey & Co.", email: "JMcDonough@cresseyco.com", status: "Unresponsive" },
-  { name: "Sarah Hirsch", company: "Shore Capital Partners", email: "shirsch@shorecp.com", status: "On Ice" },
-  { name: "TBD @ H.I.G. Capital", company: "H.I.G. Capital", email: "ngrgurev@hig.com", status: "On Ice" },
-  { name: "TBD @ Clearlake", company: "Clearlake", email: "jhurson@lambert.com", status: "On Ice" },
-  { name: "TBD @ Inverness Graham", company: "Inverness Graham", email: "mmoran@invernessgraham.com", status: "On Ice" },
-  { name: "TBD @ IOP", company: "IOP", email: "grichmond@iopfund.com", status: "On Ice" },
-  { name: "TBD @ Housatonic Partners", company: "Housatonic Partners", email: "srussell@housatonicpartners.com", status: "On Ice" },
-  { name: "TBD @ One Equity", company: "One Equity", email: "david.lippin@oneequity.com", status: "On Ice" },
-  { name: "TBD @ Crest Rock", company: "Crest Rock Partners", email: "kdonaghue@crestrockpartners.com", status: "On Ice" },
-  { name: "Jody Shechtman", company: "GreyLion", email: "jody@greylion.com", status: "On Ice" },
-  { name: "TBD @ GrowthCurve", company: "GrowthCurve Capital", email: "katherine@growthcurvecapital.com", status: "On Ice" },
-  { name: "Beau Thomas", company: "Agellus Capital", email: "bthomas@agellus.com", status: "On Ice" },
-  { name: "Mara Edgar", company: "The Riverside Company", email: "medgar@RiversideCompany.com", status: "Unresponsive" },
-  { name: "TBD @ Serent Capital", company: "Serent Capital", email: "Sam.Whitford@SerentCapital.com", status: "Unresponsive" },
-  { name: "Alice Mann", company: "Sentinel Capital Partners", email: "mann@sentinalpartners.com", status: "Unresponsive" },
-  { name: "TBD @ Excellere Partners", company: "Excellere Capital", email: "tkelly@excellere.com", status: "On Ice" },
-  { name: "TBD @ Investcorp", company: "Investcorp", email: "kfleischer@investcorp.com", status: "Unresponsive" },
-  { name: "TBD @ Broad Sky Partners", company: "Broad Sky Partners", email: "jwang@broadskypartners.com", status: "Unresponsive" },
-  { name: "TBD @ Prairie Capital", company: "Prairie Capital", email: "tweidaw@prairie-capital.com", status: "Unresponsive" },
-  { name: "Kelly Stone", company: "Main Post Partners", email: "kstone@mainpostpartners.com", status: "Unresponsive" },
-  { name: "Luke Johnson", company: "Arcline Investment Management", email: "luke@arcline.com", status: "Unresponsive" },
-  { name: "Chrisanne Corbett", company: "KPMG Corporate Finance", email: "ccorbett@kpmg.com", status: "Unresponsive" },
-  { name: "Andrew Bonanno", company: "Kohlberg & Co.", email: "bonanno@kohlberg.com", status: "Unresponsive" },
-  { name: "John Donahue", company: "Windjammer Capital Investors", email: "jdonahue@windjammercapital.com", status: "Unresponsive" },
-  { name: "Daniel Lee", company: "Garnett Station Partners", email: "lee@garnettstation.com", status: "Unresponsive" },
-  { name: "Ian Mackay", company: "BlackArch Partners", email: "mackay@blackarchpartners.com", status: "Unresponsive" }
+  { name: 'TBD @Main Post', company: 'Main Post Partners', email: 'thyland@mainpostpartners.com', status: 'Unresponsive' },
+  { name: 'Joe Rondinelli', company: 'Frontenac', email: 'jrondinelli@frontenac.com', status: 'Unresponsive' },
+  { name: 'Nickie Norris', company: 'New Heritage Capital', email: 'nnorris@newheritagecapital.com', status: 'Unresponsive' },
+  { name: 'Eric Keen', company: 'Council Capital', email: 'ekeen@councilcapital.com', status: 'Unresponsive' },
+  { name: 'TBD @ Summit Partners', company: 'Summit Partners', email: 'jgutman@summitpartners.com', status: 'Unresponsive' },
+  { name: 'TBD @ TA Associates', company: 'TA Associates', email: 'mbenoit@ta.com', status: 'Unresponsive' },
+  { name: 'Thomas Groh', company: 'Altus Capital Partners', email: 'tgroh@altuscapitalpartners.com', status: 'Unresponsive' },
+  { name: 'Rene Stewart', company: 'Vista Equity Partners', email: 'rstewart@vistaequitypartners.com', status: 'Unresponsive' },
+  { name: 'Rajeev Amara', company: 'Arcline Investment Management', email: 'Arcline-JF@joelefrank.com', status: 'Unresponsive' },
+  { name: 'Allison Fiore', company: 'The Cortec Group', email: '', status: 'On Ice' },
+  { name: 'Kelly Cornelus', company: 'LaSalle Capital & Senior Advisor', email: 'kcornelis@lasallecapital.com', status: 'On Ice' },
+  { name: 'Colleen Gurda', company: 'Riveter Capital', email: 'colleen@rivetercapital.com', status: 'On Ice' },
+  { name: 'Paul Swaney III', company: 'Swaney Group Capital', email: 'megan@swaneygroup.com', status: 'On Ice' },
+  { name: 'Mitchell Green', company: 'Lead Edge Capital', email: 'mesposito@moxiegrouppr.com', status: 'On Ice' },
+  { name: 'Matt McLain', company: 'Victor Capital Partners', email: 'mmclain@victorcapitalpartners.com', status: 'On Ice' },
+  { name: 'Michael Fieldstone', company: 'Aterian Investment Partners', email: 'mfieldstone@aterianpartners.com', status: 'On Ice' },
+  { name: 'Geri House', company: 'Platform Partners', email: 'ghouse@platformllc.com', status: 'On Ice' },
+  { name: 'Richard Elder', company: 'The Carlyle Group', email: 'richard.elder@carlyle.com', status: 'On Ice' },
+  { name: 'Ann Chung', company: 'Blackstone Growth', email: 'ann.chung@blackstone.com', status: 'On Ice' },
+  { name: 'Jene Elzie', company: 'Dunes Point Capital', email: 'jene.elzie@dunespointcapital.com', status: 'On Ice' },
+  { name: 'Erik Dykema', company: 'Lineage Capital', email: 'erik@lineagecap.com', status: 'Unresponsive' },
+  { name: 'TBD @ Aterian Investment', company: 'Aterian Investment Partners', email: 'cremmel@aterianpartners.com', status: 'Unresponsive' },
+  { name: 'TBD @ Cressey', company: 'Cressey & Co.', email: 'JMcDonough@cresseyco.com', status: 'Unresponsive' },
+  { name: 'Sarah Hirsch', company: 'Shore Capital Partners', email: 'shirsch@shorecp.com', status: 'On Ice' },
+  { name: 'TBD @ H.I.G. Capital', company: 'H.I.G. Capital', email: 'ngrgurev@hig.com', status: 'On Ice' },
+  { name: 'TBD @ Clearlake', company: 'Clearlake', email: 'jhurson@lambert.com', status: 'On Ice' },
+  { name: 'TBD @ Inverness Graham', company: 'Inverness Graham', email: 'mmoran@invernessgraham.com', status: 'On Ice' },
+  { name: 'TBD @ IOP', company: 'IOP', email: 'grichmond@iopfund.com', status: 'On Ice' },
+  { name: 'TBD @ Housatonic Partners', company: 'Housatonic Partners', email: 'srussell@housatonicpartners.com', status: 'On Ice' },
+  { name: 'TBD @ One Equity', company: 'One Equity', email: 'david.lippin@oneequity.com', status: 'On Ice' },
+  { name: 'TBD @ Crest Rock', company: 'Crest Rock Partners', email: 'kdonaghue@crestrockpartners.com', status: 'On Ice' },
+  { name: 'Jody Shechtman', company: 'GreyLion', email: 'jody@greylion.com', status: 'On Ice' },
+  { name: 'TBD @ Clairvest', company: 'Clairvest', email: '', status: 'On Ice' },
+  { name: 'TBD @ Ronin', company: 'Ronin Equity Partners', email: '', status: 'On Ice' },
+  { name: 'TBD @ GrowthCurve', company: 'GrowthCurve Capital', email: 'katherine@growthcurvecapital.com', status: 'On Ice' },
+  { name: 'Beau Thomas', company: 'Agellus Capital', email: 'bthomas@agellus.com', status: 'On Ice' },
+  { name: 'Mara Edgar', company: 'The Riverside Company', email: 'medgar@RiversideCompany.com', status: 'Unresponsive' },
+  { name: 'TBD @ Serent Capital', company: 'Serent Capital', email: 'Sam.Whitford@SerentCapital.com', status: 'Unresponsive' },
+  { name: 'Alice Mann', company: 'Sentinel Capital Partners', email: 'mann@sentinalpartners.com', status: 'Unresponsive' },
+  { name: 'TBD @ Excellere Partners', company: 'Excellere Capital', email: 'tkelly@excellere.com', status: 'On Ice' },
+  { name: 'TBD @ Investcorp', company: 'Investcorp', email: 'kfleischer@investcorp.com', status: 'Unresponsive' },
+  { name: 'TBD @ Broad Sky Partners', company: 'Broad Sky Partners', email: 'jwang@broadskypartners.com', status: 'Unresponsive' },
+  { name: 'TBD @ Prairie Capital', company: 'Prairie Capital', email: 'tweidaw@prairie-capital.com', status: 'Unresponsive' },
+  { name: 'Kelly Stone', company: 'Main Post Partners', email: 'kstone@mainpostpartners.com', status: 'Unresponsive' },
+  { name: 'Luke Johnson', company: 'Arcline Investment Management', email: 'luke@arcline.com', status: 'Unresponsive' },
+  { name: 'Chrisanne Corbett', company: 'KPMG Corporate Finance', email: 'ccorbett@kpmg.com', status: 'Unresponsive' },
+  { name: 'Andrew Bonanno', company: 'Kohlberg & Co.', email: 'bonanno@kohlberg.com', status: 'Unresponsive' },
+  { name: 'John Donahue', company: 'Windjammer Capital Investors', email: 'jdonahue@windjammercapital.com', status: 'Unresponsive' },
+  { name: 'Daniel Lee', company: 'Garnett Station Partners', email: 'lee@garnettstation.com', status: 'Unresponsive' },
+  { name: 'Ian Mackay', company: 'BlackArch Partners', email: 'mackay@blackarchpartners.com', status: 'Unresponsive' },
+  { name: 'John Kim', company: 'New State Capital Partners', email: 'jkim@newstatecp.com', status: 'Unresponsive' },
+  { name: 'Jody Shechtman', company: 'GreyLion Partners', email: '', status: 'Unresponsive' },
+  { name: 'Brent Paris', company: 'Dubin Clark', email: 'paris@dubinclark.com', status: 'Unresponsive' },
+  { name: 'Jean-Philipe Garant', company: 'Novacap', email: 'garantj@novacap.ca', status: 'Unresponsive' },
+  { name: 'Tapan Modi', company: 'Owner Resource Group', email: 'tmodi@orgroup.com', status: 'Unresponsive' },
+  { name: 'David Affinito', company: 'Victor Capital Partners', email: 'daffinito@victorcapitalpartners.com', status: 'Unresponsive' },
+  { name: 'Jonathan Rosen', company: 'Paceline Equity Partners', email: 'jrosen@pacelineequity.com', status: 'Unresponsive' },
+  { name: 'Scott Snow', company: 'Reynolda Equity Partners', email: 'ssnow@reynoldaequity.com', status: 'Unresponsive' },
+  { name: 'Zack Tillitski', company: 'Pamlico Capital', email: 'zack.tillitski@pamlicocapital.com', status: 'Unresponsive' },
+  { name: 'Luke Plumpton', company: 'O2 Investment Partners', email: 'lplumpton@o2investment.com', status: 'Unresponsive' },
+  { name: 'Harjot Sachdeva', company: 'Banneker Partners', email: 'hsachdeva@bannekerpartners.com', status: 'Unresponsive' },
+  { name: 'Eric Rahe', company: 'JC Flowers & Co', email: 'erahe@jcfco.com', status: 'Unresponsive' },
+  { name: 'Nicholas Rowland', company: 'Sheridan Capital Partners', email: 'nicholas.rowland@sheridancp.com', status: 'Unresponsive' },
+  { name: 'Brad Bernstein', company: 'FTV Capital', email: 'bbernstein@ftvcapital.com', status: 'Unresponsive' },
+  { name: 'Brian Barnum', company: 'Shamrock Capital', email: 'bbarnum@shamrockcap.com', status: 'Unresponsive' },
+  { name: 'Geoffrey Freeman', company: 'FFL Partners', email: 'gfreeman@fflpartners.com', status: 'Unresponsive' },
+  { name: 'Simon Bachleda', company: 'RevelStoke Capital Partners', email: 'sbachleda@revelstokecapital.com', status: 'Unresponsive' },
+  { name: 'Polly Mack', company: 'Gryphon Investors', email: 'mack@gryphoninvestors.com', status: 'Unresponsive' },
+  { name: 'Mike Fontana', company: 'Corsair Capital', email: 'mikefontana@gmail.com', status: 'Unresponsive' },
+  { name: 'Shweta Kabadi', company: 'BV Investment Partners', email: 'skabadi@bvlp.com', status: 'Unresponsive' },
+  { name: 'Kevin Graff', company: 'Atlantic Street Capital Management', email: 'kevin@ascoperators.com', status: 'Unresponsive' },
+  { name: 'Alexis Underwood', company: 'Wynnchurch Capital', email: '', status: 'Unresponsive' },
+  { name: 'Rakesh Kapoor', company: 'Edgewater Capital Partners', email: 'rkapoor@edgewatercapital.com', status: 'Unresponsive' },
+  { name: 'Brian Steinbrueck', company: 'Breck Partners', email: 'brian@breckpartners.com', status: 'Unresponsive' },
+  { name: 'Brad Guy', company: 'Shoreline Equity Partners', email: 'guy@shorelineequitypartners.com', status: 'Unresponsive' },
+  { name: 'Andrew Cohan', company: 'Halmos Capital Partners', email: 'andrew.cohan@halmoscapital.com', status: 'Unresponsive' },
+  { name: "David de Laureal", company: "Carr's Hill Partners", email: 'david@carrshillpartners.com', status: 'Unresponsive' },
+  { name: 'David Horowitz', company: 'Everberg Capital', email: 'david.horowitz@everbergcapital.com', status: 'Unresponsive' },
+  { name: 'Johnny Lieberman', company: 'Worklyn Partners', email: 'johnny@worklynpartners.com', status: 'Unresponsive' },
+  { name: 'Andrew Milgram', company: 'Marblegate Asset Management', email: 'amilgram@marblegate.com', status: 'Unresponsive' },
+  { name: 'Daley Donigan', company: 'NorthCurrent Partners', email: 'ddonigan@ncpartners.com', status: 'Unresponsive' },
+  { name: 'Grigory Kegeles', company: 'Newlight Partners', email: 'greg.kegeles@newlightpartners.com', status: 'Unresponsive' },
+  { name: 'Lindsey Tannenbaum', company: 'Astara Capital Partners', email: 'lindsey@astaracapital.com', status: 'Unresponsive' },
+  { name: 'Ameya Agge', company: 'Assured Healthcare Partners', email: 'aagge@ahpartners.com', status: 'Unresponsive' },
+  { name: 'Gregg Monastiero', company: 'Ethos Capital Private Equity', email: 'gregg.monastiero@ethoscapital.com', status: 'Unresponsive' },
+  { name: 'Gerald Smith', company: 'Allied Industrial Partners', email: 'gsmith@aipgp.com', status: 'Unresponsive' },
+  { name: "Michael O'Neill", company: 'The Great River Company', email: 'moneill@tgrco.net', status: 'Unresponsive' },
+  { name: 'Kaitlyn Nealon', company: 'American Industrial Partners', email: 'kaitlyn@americanindustrial.com', status: 'Unresponsive' },
+  { name: 'Scott Levine', company: 'Parthenon Capital Partners', email: 'scottl@parthenoncapital.com', status: 'Unresponsive' },
+  { name: 'Jared Poland', company: 'CPC Management', email: 'jpoland@cpc.llc', status: 'Unresponsive' },
+  { name: 'Chris Redding', company: 'SK Capital Partners', email: 'credding@skcapitalpartners.com', status: 'Unresponsive' },
+  { name: 'Latasha Akoma', company: 'GenNx360 Capital Partners', email: 'lakoma@gennx360.com', status: 'Unresponsive' },
+  { name: 'Marc Utay', company: 'Clarion Capital Partners', email: 'mutay@clarion-capital.com', status: 'Unresponsive' },
+  { name: 'Andy Kirkpatrick', company: 'Vance Street Capital', email: 'akirkpatrick@vancestreetcapital.com', status: 'Unresponsive' },
+  { name: 'Eric Von Stroh', company: 'Long Point Capital', email: 'evonstroh@lpcfund.com', status: 'Unresponsive' },
+  { name: 'Kyle Madden', company: 'KLH Capital', email: 'kyle@klhcapital.com', status: 'Unresponsive' },
+  { name: 'David Kim', company: 'Eagle Merchant Partners', email: 'dkim@eaglemerchantpartners.com', status: 'Unresponsive' },
+  { name: 'Dana Allen', company: 'Gauge Capital', email: 'dallen@gaugecapital.com', status: 'Unresponsive' },
+  { name: 'Guy Zaczepinski', company: 'Century Park Capital Partners', email: 'gzaczepinski@cpclp.com', status: 'Unresponsive' },
+  { name: 'Geoffrey Teillon', company: 'Ampersand Capital Partners', email: 'gpt@ampersandcapital.com', status: 'Unresponsive' },
+  { name: 'Jay Landauer', company: 'Union Capital', email: 'jay@unioncapitalcorp.com', status: 'Unresponsive' },
+  { name: 'Julia Frenette', company: 'Silversmith Capital Partners', email: 'julia@silversmith.com', status: 'Unresponsive' },
+  { name: 'Hakim Ghanem', company: 'Advent International', email: 'hghanem@adventinternational.com', status: 'Unresponsive' },
+  { name: 'Jason Melton', company: 'Long Ridge Equity Partners', email: 'jmelton@long-ridge.com', status: 'Unresponsive' },
+  { name: 'Michael Zhong', company: '3 Rivers Capital', email: 'zhong@3riverscap.com', status: 'Unresponsive' },
+  { name: 'Richard Erickson', company: 'Lightview Capital', email: 'rerickson@lightviewcapital.com', status: 'Unresponsive' },
+  { name: 'Yaacov Weinstock', company: 'Greybull Stewardship', email: 'yaacov@greybullstewardship.com', status: 'Unresponsive' },
+  { name: 'Kerri McNicholas', company: 'Gainline Capital Partners', email: 'kerri@gainlinecapital.com', status: 'Unresponsive' },
+  { name: 'Roberto Mastrigli', company: 'Copley Equity Partners', email: 'rmastrigli@copleyequity.com', status: 'Unresponsive' },
+  { name: 'Matt Pettit', company: 'Seven Hills Capital', email: 'matt@7hillscap.com', status: 'Interested, but not right now' },
+  { name: 'Darryl Smith', company: 'Windage Partners', email: 'darryl.smith@windage.com', status: 'Unresponsive' },
+  { name: 'Kearney Shanahan', company: 'Ambler Brook', email: 'kearney@amblerbrook.com', status: 'Unresponsive' },
+  { name: 'Ryan Sprott', company: 'Great Range Capital', email: 'ryan.sprott@greatrangecapital.com', status: 'Unresponsive' },
+  { name: 'Elias Lebovits', company: 'Swift Anchor Holdings', email: 'elias@swiftanchor.com', status: 'Unresponsive' },
+  { name: 'Pierre-Luc Mathieu', company: 'Bluejay Capital', email: 'pierre.mathieu@bluejay-capital.com', status: 'Unresponsive' },
+  { name: 'TBD @ Trivest', company: 'Trivest', email: '', status: 'Reached Out (3rd Attempt)' },
+  { name: 'Kevin Salmini', company: 'Houlihan Lokey', email: 'ksalmini@hl.com', status: 'Reached Out (3rd Attempt)' },
+  { name: 'TBD @ GTCR', company: 'GTCR', email: '', status: 'Reached Out (3rd Attempt)' },
+  { name: 'TBD @ Hellman & Friedman', company: 'Hellman & Friedman', email: 'sdaniels@hf.com', status: 'Reached Out (3rd Attempt)' },
+  { name: 'Brian Chambers', company: 'Pamlico Capital', email: '', status: 'Reached Out (3rd Attempt)' },
+  { name: 'Lori Ali', company: 'Providence Strategic Growth (PSG)', email: 'lori.ali@psgequity.com', status: 'Reached Out (3rd Attempt)' },
+  { name: 'TBD @ Sixth Street Partners', company: 'Sixth Street Partners', email: '', status: 'Reached Out (3rd Attempt)' },
+  { name: 'Heather Madland', company: 'Huron Capital', email: 'hmadland@huroncapital.com', status: 'Reached Out (3rd Attempt)' },
+  { name: 'TBD @ Nordic Capital', company: 'Nordic Capital', email: 'sihien.goh@nordiccapital.com', status: 'Reached Out (3rd Attempt)' },
+  { name: 'Sean Kelley', company: 'GridIron Capital', email: 'skelley@gridironcapital.com', status: 'Reached Out (3rd Attempt)' },
+  { name: 'Rachel Geller', company: 'Insight Partners', email: 'rgeller@insightpartners.com', status: 'Reached Out (3rd Attempt)' },
+  { name: 'Keval Patel', company: 'H.I.G. Capital', email: 'kpatel@higcapital.com', status: 'Reached Out (3rd Attempt)' },
+  { name: 'Rupen Patel', company: 'Sumeru Equity Partners', email: 'rupen.patel@sumeruequity.com', status: 'Reached Out (3rd Attempt)' },
+  { name: 'Bryan West', company: 'Resurgens Technology Partners', email: 'bryan@resurgenstech.com', status: 'Reached Out (3rd Attempt)' },
+  { name: 'Dan Hanks', company: 'Peterson Partners', email: 'dhanks@petersonpartners.com', status: 'Reached Out (3rd Attempt)' },
+  { name: 'Aaron Miller', company: 'Apollo Global Management', email: 'amiller@apollo.com', status: 'Reached Out (3rd Attempt)' },
+  { name: 'Mike Murray', company: 'Peloton Capital Management', email: 'mike_murray@pelotoncapitalmanagement.com', status: 'Reached Out (3rd Attempt)' },
+  { name: 'Steve Klinsky', company: 'New Mountain Capital', email: 'sklinsky@newmountaincapital.com', status: 'Reached Out (3rd Attempt)' },
+  { name: 'Art Laffer', company: 'Laffer Center', email: '', status: 'Reached Out (3rd Attempt)' },
+  { name: 'Andrew Thompson', company: 'Seaside Equity Partners', email: 'andrew.thompson@seasideequity.com', status: 'Interested, but not right now' },
+  { name: 'Sloan Allen', company: 'Kanbrick', email: 'sallen@kanbrick.com', status: 'Interested, but not right now' },
+  { name: 'TBD @ DFW Capital', company: 'DFW Partners', email: 'kleshinsky@dfwcapital.com', status: 'Interested, but not right now' },
+  { name: 'TBD @ Skky Partners', company: 'Skky Partners', email: 'SKKYPartners@fgsglobal.com', status: 'Interested, but not right now' },
+  { name: 'Graham Weaver', company: 'Alpine Investors', email: '', status: 'Interested, but not right now' },
+  { name: 'TBD @ Platform Partners', company: 'Platform Partners', email: 'vkalra@platformllc.com', status: 'Interested, but not right now' },
+  { name: 'TBD @ Incline Equity', company: 'Incline Equity', email: 'Sara.Weinbaum@inclineequity.com', status: 'Interested, but not right now' },
+  { name: 'Brian Regan', company: 'Spectrum Equity', email: 'bregan@spectrumequity.com', status: 'Interested, but not right now' },
+  { name: 'Andrew Sheiner', company: 'Atlas Partners', email: 'asheiner@altas.com', status: 'Interested, but not right now' },
+  { name: 'Rob Dreier', company: 'H.I.G. Capital', email: 'rdreier@higcapital.com', status: 'Interested, but not right now' },
+  { name: 'TBD @ Audax Group', company: 'Audax Group', email: 'kmacfadyen@audaxgroup.com', status: 'Interested, but not right now' },
+  { name: 'Fred Paulenich', company: 'TPG Growth', email: 'fpaulenich@tpg.com', status: 'Interested, but not right now' },
+  { name: 'Stephen Keller', company: 'Compass Diversified', email: 'alex@compassdiversified.com', status: 'Interested, but not right now' },
+  { name: 'Kristin Brown Patrick', company: 'New State Capital Partners', email: 'kpatrick@newstatecp.com', status: 'Reached Out (1st Attempt)' },
+  { name: 'Mark Jones', company: 'River Associates', email: 'mjones@riverassociates.com', status: 'Coordinating (w/ Guest)' },
+  { name: 'Courtney Hagen', company: 'Littlejohn & Company', email: 'chagen@littlejohnllc.com', status: 'Coordinating / More Info' },
+  { name: 'Ramesh Venugopal', company: 'Riverwood Capital', email: 'ramesh@rwcm.com', status: 'Coordinating / More Info' },
+  { name: 'André Martinelli', company: 'Rockbridge Growth Equity', email: 'andremartinelli@rbequity.com', status: 'Coordinating (w/ Guest)' },
+  { name: 'Neil Bansal', company: 'Omers', email: 'NBansal@Omers.com', status: 'Coordinating (w/ Guest)' },
+  { name: 'Keith Angell', company: 'FTV Capital', email: 'kangell@ftvcapital.com', status: 'Reached Out (1st Attempt)' },
+  { name: 'Neel Bhatia', company: 'Arcline Investment Management', email: 'neel@arcline.com', status: 'Reached Out (1st Attempt)' },
+  { name: 'Seth Brody', company: 'Apax Partners', email: 'seth.brody@apax.com', status: 'Reached Out (1st Attempt)' },
+  { name: 'Donna Cooper', company: 'Varsity Healthcare Partners', email: 'dc@varsityhealthcarepartners.com', status: 'Reached Out (1st Attempt)' },
+  { name: 'Jimmy Holloran', company: 'American Industrial Partners', email: 'jimmy@americanindustrial.com', status: 'Reached Out (1st Attempt)' },
+  { name: 'Jeff Giles', company: 'Garden City Equity', email: 'jeff@gardencityequity.com', status: 'To Reach Out' },
+  { name: 'Nicholas Stone', company: 'Cyprium Partners', email: 'nstone@cyprium.com', status: 'To Reach Out' },
+  { name: 'Pat Donegan', company: 'Blue Ridge Partners', email: 'pdonegan@blueridgepartners.com', status: 'To Reach Out' },
+  { name: 'Anthony Arnold', company: 'Barnes & Thornburg', email: '', status: 'To Reach Out' },
+  { name: 'Andrew Mendelsohn', company: 'Bessemer Investors', email: 'mendelsohn@bessemer.com', status: 'To Reach Out' },
+  { name: 'Natalie Ings', company: 'Lightyear Capital', email: 'natalie.ings@lycap.com', status: 'To Reach Out' },
+  { name: 'Will Busch', company: 'Tilia Holdings', email: 'wbusch@tiliallc.com', status: 'To Reach Out' },
+  { name: 'Richard Yeh', company: 'BBH Capital Partners', email: 'richard.yeh@bbh.com', status: 'To Reach Out' },
+  { name: 'Lee Stern', company: 'Centre Lane Partners', email: 'lstern@centrelanepartners.com', status: 'To Reach Out' },
+  { name: 'Anna Kovalkova', company: 'Pharos Funds', email: 'akovalkova@pharosfunds.com', status: 'To Reach Out' }
 ];
 
-// Assign stable IDs
 GUESTS.forEach((g, i) => g.id = i);
 
-let sortField = 'name';
+let sortField = 'status';
 let sortAsc = true;
 let currentEmailText = '';
 
 function getSentState() {
   try { return JSON.parse(localStorage.getItem('ksob_sent') || '{}'); } catch { return {}; }
 }
-function setSent(id, val) {
-  const s = getSentState();
-  s[id] = val;
-  localStorage.setItem('ksob_sent', JSON.stringify(s));
-}
 
 function getFirstName(name) {
   if (!name) return 'there';
-  const cleaned = name.replace(/^\(DM\)\s*/i, '').replace(/^TBD\s*@\s*/i, '').trim();
-  const parts = cleaned.split(/\s+/);
-  return parts[0] || 'there';
+  const cleaned = name
+    .replace(/^\(DM\)\s*/i, '')
+    .replace(/^TBD\s*@\s*/i, '')
+    .replace(/\s*\([^)]*\)\s*$/, '')
+    .trim();
+  return cleaned.split(/[\s,]+/)[0] || 'there';
 }
 
 function buildEmail(guest) {
@@ -284,21 +415,32 @@ Thanks,
 Chris`;
 }
 
-function badgeHtml(status, sent) {
-  if (sent) return '<span class="badge badge-sent">Sent</span>';
-  if (status === 'Unresponsive') return '<span class="badge badge-unresponsive">Unresponsive</span>';
-  if (status === 'On Ice') return '<span class="badge badge-onice">On Ice</span>';
-  return `<span class="badge badge-other">${status}</span>`;
+function badgeClass(status, sent) {
+  if (sent) return 'badge-sent';
+  const s = (status || '').toLowerCase();
+  if (s === 'unresponsive') return 'badge-unresponsive';
+  if (s === 'on ice') return 'badge-onice';
+  if (s.includes('interested')) return 'badge-interested';
+  if (s.includes('3rd')) return 'badge-reached3';
+  if (s.includes('1st')) return 'badge-reached1';
+  if (s === 'to reach out') return 'badge-toreach';
+  if (s.includes('coordinating')) return 'badge-coordinating';
+  return 'badge-other';
+}
+
+function badgeLabel(status, sent) {
+  if (sent) return 'Email Sent';
+  return status || '—';
 }
 
 function render() {
   const sentState = getSentState();
   const statusFilter = document.getElementById('statusFilter').value;
-  const search = document.getElementById('searchInput').value.toLowerCase();
+  const search = document.getElementById('searchInput').value.toLowerCase().trim();
 
   let guests = GUESTS.slice();
 
-  if (statusFilter === 'Sent') {
+  if (statusFilter === '__sent__') {
     guests = guests.filter(g => sentState[g.id]);
   } else if (statusFilter) {
     guests = guests.filter(g => !sentState[g.id] && g.status === statusFilter);
@@ -307,13 +449,15 @@ function render() {
   if (search) {
     guests = guests.filter(g =>
       g.name.toLowerCase().includes(search) ||
-      (g.company || '').toLowerCase().includes(search)
+      g.company.toLowerCase().includes(search) ||
+      g.email.toLowerCase().includes(search)
     );
   }
 
+  const fieldMap = { name: 'name', company: 'company', email: 'email', status: 'status' };
   guests.sort((a, b) => {
-    let av = a[sortField === 'name' ? 'name' : sortField === 'company' ? 'company' : sortField === 'email' ? 'email' : 'status'] || '';
-    let bv = b[sortField === 'name' ? 'name' : sortField === 'company' ? 'company' : sortField === 'email' ? 'email' : 'status'] || '';
+    const f = fieldMap[sortField] || 'name';
+    const av = a[f] || '', bv = b[f] || '';
     return sortAsc ? av.localeCompare(bv) : bv.localeCompare(av);
   });
 
@@ -325,20 +469,21 @@ function render() {
     emptyMsg.style.display = 'block';
   } else {
     emptyMsg.style.display = 'none';
-    guests.forEach(g => {
+    guests.forEach((g, idx) => {
       const sent = !!sentState[g.id];
       const tr = document.createElement('tr');
       if (sent) tr.className = 'sent-row';
+      const rowNum = idx + 1;
       tr.innerHTML = `
-        <td><strong>${escHtml(g.name)}</strong></td>
-        <td>${escHtml(g.company || '—')}</td>
-        <td style="font-size:0.8rem;color:#495057">${g.email ? `<a href="mailto:${escHtml(g.email)}" style="color:inherit">${escHtml(g.email)}</a>` : '—'}</td>
-        <td>${badgeHtml(g.status, sent)}</td>
+        <td><span style="color:#adb5bd;font-size:0.75rem;margin-right:6px">${rowNum}</span><strong>${esc(g.name)}</strong></td>
+        <td>${esc(g.company || '—')}</td>
+        <td style="font-size:0.8rem;color:#495057">${g.email ? `<a href="mailto:${esc(g.email)}" style="color:inherit">${esc(g.email)}</a>` : '—'}</td>
+        <td><span class="badge ${badgeClass(g.status, sent)}">${esc(badgeLabel(g.status, sent))}</span></td>
         <td>
           <div class="actions">
-            <button class="btn btn-email" onclick="openEmail(${g.id})">View Email</button>
+            <button class="btn btn-email" onclick="openEmail(${g.id})">Email</button>
             <button class="btn btn-copy" id="copy-${g.id}" onclick="copyEmail(${g.id})">Copy</button>
-            <button class="btn btn-sent ${sent ? 'is-sent' : ''}" id="sent-${g.id}" onclick="toggleSent(${g.id})">
+            <button class="btn btn-sent ${sent ? 'is-sent' : ''}" onclick="toggleSent(${g.id})">
               ${sent ? '✓ Sent' : 'Mark Sent'}
             </button>
           </div>
@@ -350,14 +495,21 @@ function render() {
   // Stats
   const total = GUESTS.length;
   const sentCount = GUESTS.filter(g => sentState[g.id]).length;
-  const unresponsive = GUESTS.filter(g => !sentState[g.id] && g.status === 'Unresponsive').length;
-  const onIce = GUESTS.filter(g => !sentState[g.id] && g.status === 'On Ice').length;
-  document.getElementById('stats').textContent =
-    `${total} total guests · ${sentCount} sent · ${unresponsive} unresponsive · ${onIce} on ice · showing ${guests.length}`;
+  const byCounts = {};
+  GUESTS.forEach(g => {
+    if (!sentState[g.id]) byCounts[g.status] = (byCounts[g.status] || 0) + 1;
+  });
+  const parts = [
+    `${total} total`,
+    `${sentCount} sent`,
+    ...Object.entries(byCounts).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${v} ${k.replace(', but not right now','').replace(' (w/ Guest)','').replace(' Attempt','x')}`),
+    `showing ${guests.length}`
+  ];
+  document.getElementById('stats').textContent = parts.join(' · ');
 }
 
-function escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function sortBy(field) {
@@ -371,11 +523,11 @@ function openEmail(id) {
   if (!g) return;
   currentEmailText = buildEmail(g);
   document.getElementById('modalTitle').textContent = `Email to ${g.name}`;
-  document.getElementById('modalSub').textContent = g.company + (g.email ? ` · ${g.email}` : '');
+  document.getElementById('modalSub').textContent = (g.company || '') + (g.email ? ` · ${g.email}` : '');
   document.getElementById('modalBody').textContent = currentEmailText;
-  const copyBtn = document.getElementById('modalCopyBtn');
-  copyBtn.textContent = 'Copy Email';
-  copyBtn.className = 'btn btn-copy';
+  const btn = document.getElementById('modalCopyBtn');
+  btn.textContent = 'Copy Email';
+  btn.className = 'btn btn-copy btn-modal-copy';
   document.getElementById('modalOverlay').classList.add('open');
 }
 
@@ -387,16 +539,15 @@ function copyModalEmail() {
   navigator.clipboard.writeText(currentEmailText).then(() => {
     const btn = document.getElementById('modalCopyBtn');
     btn.textContent = 'Copied!';
-    btn.className = 'btn btn-copy copied';
-    setTimeout(() => { btn.textContent = 'Copy Email'; btn.className = 'btn btn-copy'; }, 2000);
+    btn.className = 'btn btn-copy copied btn-modal-copy';
+    setTimeout(() => { btn.textContent = 'Copy Email'; btn.className = 'btn btn-copy btn-modal-copy'; }, 2000);
   });
 }
 
 function copyEmail(id) {
   const g = GUESTS.find(x => x.id === id);
   if (!g) return;
-  const text = buildEmail(g);
-  navigator.clipboard.writeText(text).then(() => {
+  navigator.clipboard.writeText(buildEmail(g)).then(() => {
     const btn = document.getElementById(`copy-${id}`);
     if (btn) {
       btn.textContent = 'Copied!';
@@ -409,15 +560,12 @@ function copyEmail(id) {
 function toggleSent(id) {
   const s = getSentState();
   s[id] = !s[id];
+  if (!s[id]) delete s[id];
   localStorage.setItem('ksob_sent', JSON.stringify(s));
   render();
 }
 
-// Close modal on overlay click
-document.getElementById('modalOverlay').addEventListener('click', function(e) {
-  if (e.target === this) closeModal();
-});
-
+document.getElementById('modalOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
 document.getElementById('statusFilter').addEventListener('change', render);
 document.getElementById('searchInput').addEventListener('input', render);
 
