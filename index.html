@@ -396,9 +396,11 @@ function getFirstName(name) {
 function buildEmail(guest) {
   const firstName = getFirstName(guest.name);
   const company = guest.company || 'your firm';
+  // Grammatically correct possessive: "Associates'" not "Associates's"
+  const possessive = company.endsWith('s') ? `${company}'` : `${company}'s`;
   return `Hi ${firstName},
 
-I help coordinate BluWave's podcast, Karma School of Business (https://www.bluwave.net/podcasts/), and we'd love to invite you on as a guest to feature your insights as well as ${company}'s innovative practices in private equity!
+I help coordinate BluWave's podcast, Karma School of Business (https://www.bluwave.net/podcasts/), and we'd love to invite you on as a guest to feature your insights as well as ${possessive} innovative practices in private equity!
 
 The podcast is hosted by Sean Mooney, BluWave's Founder and CEO, and we've published over 100 episodes featuring senior PE professionals and firm founders. Our goal is to humanize the industry and act as a resource for private equity professionals and other business builders seeking to expand their knowledge and skills.
 
