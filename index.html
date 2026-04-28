@@ -174,7 +174,10 @@
   <input type="text" id="searchInput" placeholder="Name or company..." style="width:200px" />
 </div>
 
-<div class="stats" id="stats"></div>
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px">
+  <div class="stats" id="stats" style="flex:1"></div>
+  <button class="btn btn-copy" id="copyLinkBtn" onclick="copyShareLink()" style="white-space:nowrap;font-size:0.78rem;padding:4px 10px">Copy Share Link</button>
+</div>
 
 <div class="table-wrap">
 <table id="guestTable">
@@ -401,6 +404,38 @@ function getSentState() {
 function saveSentState(s) {
   _memSentState = {...s};
   try { localStorage.setItem('ksob_sent', JSON.stringify(s)); } catch { /* private browsing — memory only */ }
+  syncUrl(s);
+}
+
+function syncUrl(s) {
+  const ids = Object.keys(s).filter(k => s[k]).join(',');
+  const url = new URL(window.location.href);
+  if (ids) url.searchParams.set('s', ids);
+  else url.searchParams.delete('s');
+  history.replaceState(null, '', url.toString());
+}
+
+function importFromUrl() {
+  const ids = new URLSearchParams(window.location.search).get('s');
+  if (!ids) return;
+  const state = getSentState();
+  let changed = false;
+  ids.split(',').map(Number).filter(n => n > 0).forEach(id => {
+    if (!state[id]) { state[id] = new Date().toISOString(); changed = true; }
+  });
+  if (changed) {
+    _memSentState = {...state};
+    try { localStorage.setItem('ksob_sent', JSON.stringify(state)); } catch {}
+  }
+}
+
+function copyShareLink() {
+  const btn = document.getElementById('copyLinkBtn');
+  navigator.clipboard.writeText(window.location.href).then(() => {
+    btn.textContent = 'Copied!';
+    btn.className = 'btn btn-copy copied';
+    setTimeout(() => { btn.textContent = 'Copy Share Link'; btn.className = 'btn btn-copy'; }, 2000);
+  });
 }
 
 function getFirstName(name) {
@@ -634,6 +669,7 @@ document.getElementById('modalOverlay').addEventListener('click', e => { if (e.t
 document.getElementById('statusFilter').addEventListener('change', render);
 document.getElementById('searchInput').addEventListener('input', render);
 
+importFromUrl();
 render();
 </script>
 </body>
