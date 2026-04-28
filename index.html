@@ -866,6 +866,21 @@ document.getElementById('statusFilter').addEventListener('change', render);
 document.getElementById('searchInput').addEventListener('input', render);
 
 importFromUrl();
+
+// One-time migration: set all sent dates to Apr 28 2026
+(function migrateSentDates() {
+  const MIG_KEY = 'ksob_mig_sent_20260428';
+  if (sessionStorage.getItem(MIG_KEY)) return;
+  const s = getSentState();
+  const today = '2026-04-28T12:00:00.000Z';
+  let changed = false;
+  for (const id in s) {
+    if (s[id] && s[id] !== today) { s[id] = today; changed = true; }
+  }
+  if (changed) saveSentState(s);
+  sessionStorage.setItem(MIG_KEY, '1');
+})();
+
 render();
 </script>
 </body>
