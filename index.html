@@ -526,7 +526,7 @@ function render() {
           <div class="actions">
             <button class="btn btn-email" onclick="openEmail(${g.id})">Email</button>
             <button class="btn btn-copy" id="copy-${g.id}" onclick="copyEmail(${g.id})">Copy</button>
-            ${g.email ? `<button class="btn btn-mail" onclick="draftInMail(${g.id})">Draft in Mail</button>` : ''}
+            ${g.email ? `<button class="btn btn-mail" onclick="draftInOutlook(${g.id})">Draft in Outlook</button>` : ''}
             <button class="btn btn-sent ${sent ? 'is-sent' : ''}" onclick="toggleSent(${g.id})">
               ${sentLabel}
             </button>
@@ -622,7 +622,7 @@ function toggleSent(id) {
   render();
 }
 
-function draftInMail(id) {
+function draftInOutlook(id) {
   const g = GUESTS.find(x => x.id === id);
   if (!g || !g.email) return;
   const subject = encodeURIComponent('Karma School of Business — Podcast Guest Invitation');
