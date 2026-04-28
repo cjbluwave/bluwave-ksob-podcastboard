@@ -25,21 +25,15 @@ if (!fs.existsSync(PDF)) {
   console.warn('   PDF=~/Documents/deck.pdf node helper.js');
 }
 
-function buildAppleScript(to, subject, body) {
+function buildAppleScript(to, subject, htmlPath) {
   // Escape for AppleScript double-quoted string: backslash then quote
   const esc = s => String(s)
     .replace(/\\/g, '\\\\')
     .replace(/"/g,  '\\"');
 
-  // Build body as concatenated string to handle newlines safely
-  const lines = body.split('\n');
-  const asBody = lines
-    .map(l => `"${esc(l)}"`)
-    .join(' & return & ');
-
   return `tell application "Microsoft Outlook"
-  set msgBody to ${asBody}
-  set newMsg to make new outgoing message with properties {subject:"${esc(subject)}", content:msgBody}
+  set htmlContent to do shell script "cat " & quoted form of "${esc(htmlPath)}"
+  set newMsg to make new outgoing message with properties {subject:"${esc(subject)}", html content:htmlContent}
   make new to recipient at newMsg with properties {email address:{address:"${esc(to)}"}}
   make new attachment at newMsg with properties {file:POSIX file "${esc(PDF)}"}
   open newMsg
@@ -60,17 +54,23 @@ const server = http.createServer((req, res) => {
   req.on('data', c => raw += c);
   req.on('end', () => {
     try {
-      const { to, subject, body } = JSON.parse(raw);
+      const { to, subject, body, htmlBody } = JSON.parse(raw);
       if (!to || !subject || !body) throw new Error('Missing to / subject / body');
 
-      const script   = buildAppleScript(to, subject, body);
-      const tmpFile  = path.join(os.tmpdir(), `ksob_${Date.now()}.applescript`);
+      const ts       = Date.now();
+      const htmlPath = path.join(os.tmpdir(), `ksob_body_${ts}.html`);
+      const tmpFile  = path.join(os.tmpdir(), `ksob_${ts}.applescript`);
+
+      // Write HTML body to temp file so AppleScript can read it with `cat`
+      fs.writeFileSync(htmlPath, htmlBody || body, 'utf8');
+      const script = buildAppleScript(to, subject, htmlPath);
       fs.writeFileSync(tmpFile, script, 'utf8');
 
       try {
         execFileSync('osascript', [tmpFile]);
       } finally {
         fs.unlinkSync(tmpFile);
+        try { fs.unlinkSync(htmlPath); } catch (_) {}
       }
 
       res.writeHead(200, { 'Content-Type': 'application/json' });

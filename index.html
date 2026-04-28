@@ -668,7 +668,7 @@ async function draftInOutlook(id) {
     const r = await fetch('http://127.0.0.1:9876/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ to: g.email, subject, body }),
+      body: JSON.stringify({ to: g.email, subject, body, htmlBody: buildEmailHTML(g) }),
       signal: AbortSignal.timeout(4000)
     });
     if (r.ok) return; // Outlook opened with attachment ✓
