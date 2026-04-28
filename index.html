@@ -195,6 +195,33 @@
     .add-guest-form input:focus, .add-guest-form select:focus { border-color: #1a2744; }
     .btn-add-new { background: #198754; color: white; padding: 5px 12px; }
     .btn-add-new:hover { opacity: 0.88; }
+
+    /* Header tabs */
+    .header-tabs { display: flex; gap: 0; margin-top: 12px; }
+    .header-tab {
+      padding: 7px 20px; border: none; border-radius: 6px 6px 0 0;
+      font-size: 0.85rem; font-weight: 600; cursor: pointer;
+      background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.7);
+      transition: background 0.15s, color 0.15s;
+    }
+    .header-tab:hover { background: rgba(255,255,255,0.25); color: white; }
+    .header-tab.active { background: #f8f9fa; color: #1a2744; }
+
+    /* Past Episodes table */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    #pastEpisodesPanel table { width: 100%; border-collapse: collapse; }
+    #pastEpisodesPanel thead th {
+      background: #1a2744; color: white; padding: 10px 14px;
+      text-align: left; font-size: 0.78rem; font-weight: 600;
+      letter-spacing: 0.04em; text-transform: uppercase;
+      cursor: pointer; user-select: none; white-space: nowrap;
+    }
+    #pastEpisodesPanel thead th:hover { background: #243260; }
+    #pastEpisodesPanel tbody tr { border-bottom: 1px solid #e9ecef; background: #fff; }
+    #pastEpisodesPanel tbody tr:hover { background: #f1f3f9; }
+    #pastEpisodesPanel tbody td { padding: 9px 14px; font-size: 0.875rem; }
+    .ep-num { color: #6c757d; font-weight: 600; font-size: 0.8rem; }
   </style>
 </head>
 <body>
@@ -215,13 +242,21 @@
 
 <div id="appContent" style="display:none">
 
-<header style="display:flex;align-items:center;justify-content:space-between">
-  <div>
-    <h1>Karma School of Business — Podcast Guest Board</h1>
-    <p>Outreach tracker · BluWave</p>
+<header>
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <div>
+      <h1>Karma School of Business — Podcast Guest Board</h1>
+      <p>Outreach tracker · BluWave</p>
+    </div>
+    <button class="btn btn-add-new" id="addNewBtn" onclick="openAddGuest()">+ Add New</button>
   </div>
-  <button class="btn btn-add-new" onclick="openAddGuest()">+ Add New</button>
+  <div class="header-tabs">
+    <button class="header-tab active" onclick="switchTab('outreach')">Outreach</button>
+    <button class="header-tab" onclick="switchTab('pastEpisodes')">Past Episodes</button>
+  </div>
 </header>
+
+<div id="outreachPanel" class="tab-panel active">
 
 <div class="controls">
   <label>Status:</label>
@@ -262,6 +297,29 @@
 </div>
 
 <div class="empty" id="emptyMsg" style="display:none">No guests match the current filters.</div>
+
+</div><!-- /outreachPanel -->
+
+<div id="pastEpisodesPanel" class="tab-panel">
+  <div class="controls">
+    <label>Search:</label>
+    <input type="text" id="epSearchInput" placeholder="Guest or firm name..." style="width:240px" />
+  </div>
+  <div class="stats" id="epStats"></div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th onclick="sortEpisodesBy('episode')" style="width:80px">Ep #</th>
+          <th onclick="sortEpisodesBy('guest')">Guest</th>
+          <th onclick="sortEpisodesBy('firm')">Firm</th>
+        </tr>
+      </thead>
+      <tbody id="epTableBody"></tbody>
+    </table>
+  </div>
+  <div class="empty" id="epEmptyMsg" style="display:none">No episodes match your search.</div>
+</div>
 
 <!-- Add Guest modal -->
 <div id="addGuestOverlay">
@@ -864,6 +922,218 @@ async function draftInOutlook(id) {
 document.getElementById('modalOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
 document.getElementById('statusFilter').addEventListener('change', render);
 document.getElementById('searchInput').addEventListener('input', render);
+
+// ---------- Tab switching ----------
+function switchTab(tab) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.header-tab').forEach(t => t.classList.remove('active'));
+  if (tab === 'outreach') {
+    document.getElementById('outreachPanel').classList.add('active');
+    document.querySelectorAll('.header-tab')[0].classList.add('active');
+    document.getElementById('addNewBtn').style.display = '';
+  } else {
+    document.getElementById('pastEpisodesPanel').classList.add('active');
+    document.querySelectorAll('.header-tab')[1].classList.add('active');
+    document.getElementById('addNewBtn').style.display = 'none';
+    renderEpisodes();
+  }
+}
+
+// ---------- Past Episodes data ----------
+const EPISODES = [
+  { episode: 142, guest: 'Sean Mooney', firm: 'BluWave' },
+  { episode: 141, guest: 'Jim Murphy', firm: 'LLR Partners' },
+  { episode: 140, guest: 'Brett Holcomb', firm: 'Prospect Partners' },
+  { episode: 139, guest: 'Jeff Drazan', firm: 'Bertram Capital' },
+  { episode: 138, guest: 'Mark Langer', firm: 'CenterOak Partners' },
+  { episode: 137, guest: 'Emily Bomberger', firm: 'Penn Spring Capital' },
+  { episode: 136, guest: 'Sean Mooney', firm: 'BluWave' },
+  { episode: 135, guest: 'Geoff Faux', firm: 'Clearview Capital' },
+  { episode: 134, guest: 'Sean Mooney', firm: 'BluWave' },
+  { episode: 133, guest: 'Rob Turano', firm: 'Bloom Equity Partners' },
+  { episode: 132, guest: 'Eliot Kerlin', firm: 'Broadwing Capital' },
+  { episode: 131, guest: 'Renn Iaboni', firm: 'Monomoy Capital Partners' },
+  { episode: 130, guest: 'Drew Meyers', firm: 'Seaport Capital' },
+  { episode: 129, guest: 'Sean Mooney', firm: 'BluWave' },
+  { episode: 128, guest: 'Laurens Goff', firm: 'Stone Goff Partners' },
+  { episode: 127, guest: 'Jared Stein', firm: 'Monogram Capital Partners' },
+  { episode: 126, guest: 'Bob Morse', firm: 'Strattam Capital' },
+  { episode: 125, guest: 'Dan Gaspar', firm: 'TZP Group' },
+  { episode: 124, guest: 'Sean Mooney', firm: 'BluWave' },
+  { episode: 123, guest: 'Ben Gaw', firm: 'Cross Rapids Capital' },
+  { episode: 122, guest: 'Dave Shephard', firm: 'Rainier Partners' },
+  { episode: 121, guest: 'Lloyd Metz & Doug McCormick', firm: 'ICV Partners & HCI Equity Partners' },
+  { episode: 120, guest: 'Vinay Kashyap, Kristin Johnson, Trent Hickman, Misha Logvinov', firm: 'MainSail Partners, Altamont Capital, VSS, MGX' },
+  { episode: 119, guest: 'Richard Fitzgerald', firm: 'CapitalSpring' },
+  { episode: 118, guest: 'Brooke Ablon', firm: 'Fort Point Capital' },
+  { episode: 117, guest: 'Brian Neider', firm: 'Lead Edge Capital' },
+  { episode: 116, guest: 'Don McDonough', firm: 'GTCR' },
+  { episode: 115, guest: 'Dave Schnadig', firm: 'Cortec Group' },
+  { episode: 114, guest: 'Misha Logvinov', firm: 'MGX' },
+  { episode: 113, guest: 'Sean Mooney', firm: 'BluWave' },
+  { episode: 112, guest: 'Sean Mooney', firm: 'BluWave' },
+  { episode: 111, guest: 'Sean Mooney', firm: 'BluWave' },
+  { episode: 110, guest: 'Sean Mooney, Doug McCormick, Lloyd Metz', firm: 'BluWave, HCI Equity Partners, ICV Partners' },
+  { episode: 109, guest: 'Micah Dawson', firm: 'Trivest' },
+  { episode: 108, guest: 'Trent Hickman', firm: 'VSS Capital Partners' },
+  { episode: 107, guest: 'John Hodge', firm: 'Rubicon Technology Partners' },
+  { episode: 106, guest: 'Kristin Johnson', firm: 'Altamont Capital Partners' },
+  { episode: 105, guest: 'Ran Ding & Chris Scullin', firm: 'Norwest' },
+  { episode: 104, guest: 'Sean Mooney', firm: 'BluWave' },
+  { episode: 103, guest: 'Dan Ryan', firm: 'MidOcean Partners' },
+  { episode: 102, guest: 'Vinay Kashyap', firm: 'Mainsail Partners' },
+  { episode: 101, guest: 'Lisa Ames', firm: 'Norwest Venture Partners' },
+  { episode: 100, guest: 'Sean Mooney', firm: 'BluWave' },
+  { episode: 99, guest: 'Jonathan Metrick', firm: 'Sagard' },
+  { episode: 98, guest: 'Steve Hunter', firm: 'TM Capital' },
+  { episode: 97, guest: 'Casey Myers', firm: 'Edison Partners' },
+  { episode: 96, guest: 'Multiple Guests', firm: 'Various' },
+  { episode: 95, guest: 'Sean Mooney', firm: 'BluWave' },
+  { episode: 94, guest: 'Multiple Guests', firm: 'Various' },
+  { episode: 93, guest: 'Rob Konrad', firm: 'Alterna Equity Partners' },
+  { episode: 92, guest: 'Nik Kapauan', firm: 'Access Holdings' },
+  { episode: 91, guest: 'Doug McCormick & Lloyd Metz', firm: 'HCI Equity Partners & ICV Partners' },
+  { episode: 90, guest: 'Jon Pressnell', firm: 'Blue Point Capital Partners' },
+  { episode: 89, guest: 'Katie Marchetti', firm: 'Community Foundation of Middle TN' },
+  { episode: 88, guest: 'Susan Soh, Cory Eaves, Jessica Ginsberg, Troy Phillips, Joe McIlhattan, Ami Mehta', firm: 'GrowthCurve, BayPine, LFM Capital, BPOC, Periscope Equity' },
+  { episode: 87, guest: 'Joelle Marquis', firm: 'Arsenal Capital Partners' },
+  { episode: 86, guest: 'Sean Mooney', firm: 'BluWave' },
+  { episode: 85, guest: 'Michael Rubel', firm: 'RFE Investment Partners' },
+  { episode: 84, guest: 'Philip Lewis', firm: 'Fulcrum Equity Partners' },
+  { episode: 83, guest: 'Christian Bullitt', firm: 'Raymond James' },
+  { episode: 82, guest: 'Caleb Clark', firm: 'ATL Partners' },
+  { episode: 81, guest: 'James Sidwa', firm: 'Heartwood Partners' },
+  { episode: 80, guest: 'Susan Soh', firm: 'GrowthCurve Capital' },
+  { episode: 79, guest: 'Jay Jester', firm: 'Plexus Capital' },
+  { episode: 78, guest: 'Conor Grennan', firm: 'AI Mindset' },
+  { episode: 77, guest: 'Carl Press, Suzanne Yoon, John Caple, Erica Blob, Eric Hansen', firm: 'Thoma Bravo, Kinzie Capital, Hidden Harbor, Brighton Park, Blue Sea Capital' },
+  { episode: 76, guest: 'Pam Hendrickson', firm: 'The Riverside Company' },
+  { episode: 75, guest: 'Troy Phillips', firm: 'BPOC' },
+  { episode: 74, guest: 'Chris Gibson', firm: 'Compass Group Equity Partners' },
+  { episode: 73, guest: 'Sean Mooney', firm: 'BluWave' },
+  { episode: 72, guest: 'Chris Cathcart', firm: 'The Halifax Group' },
+  { episode: 71, guest: 'Darren Herman', firm: 'Bain Capital' },
+  { episode: 70, guest: 'Mitch Green, Tyler Bowley, Randy Rowland', firm: 'Clairvest, Acera Insurance, Meriplex' },
+  { episode: 69, guest: 'Doug Song & Erik Ginsberg', firm: 'Prodos Capital & Slate Capital' },
+  { episode: 68, guest: 'Brian Bank', firm: 'Kirkland & Ellis' },
+  { episode: 67, guest: 'Jessica Ginsberg', firm: 'LFM Capital' },
+  { episode: 66, guest: 'Cory Eaves', firm: 'Baypine' },
+  { episode: 65, guest: 'John Stewart', firm: 'MiddleGround Capital' },
+  { episode: 64, guest: 'Ami Mehta & Joe McIlhattan', firm: 'Periscope Equity' },
+  { episode: 63, guest: 'Doug Horn', firm: 'Clairvest' },
+  { episode: 62, guest: 'Bob Belke', firm: 'Lovell Minnick Partners' },
+  { episode: 61, guest: 'Gretchen Perkins', firm: 'Avance Investment Management' },
+  { episode: 60, guest: 'Carl Press', firm: 'Thoma Bravo' },
+  { episode: 59, guest: 'Sean Mooney', firm: 'BluWave' },
+  { episode: 58, guest: 'Josh Adams', firm: 'OpenGate Capital' },
+  { episode: 57, guest: 'John Caple', firm: 'Hidden Harbor Capital Partners' },
+  { episode: 56, guest: 'Multiple PE Professionals', firm: 'Various' },
+  { episode: 55, guest: 'Doron Grosman', firm: 'Independent PE/VC/Angel' },
+  { episode: 54, guest: 'Curt Kahn', firm: 'Livingbridge' },
+  { episode: 53, guest: 'Grant Kornman', firm: 'Align Collaborate' },
+  { episode: 52, guest: 'Eric Hansen', firm: 'Blue Sea Capital' },
+  { episode: 51, guest: 'Kevin McAllister', firm: 'Access Holdings' },
+  { episode: 50, guest: 'Tim Schulte', firm: 'Council Capital' },
+  { episode: 49, guest: 'Erica Blob', firm: 'Brighton Park Capital' },
+  { episode: 48, guest: 'Andrew Joy', firm: 'Hidden Harbor Capital Partners' },
+  { episode: 47, guest: 'Sean Mooney', firm: 'BluWave' },
+  { episode: 46, guest: 'Suzanne Yoon', firm: 'Kinzie Capital' },
+  { episode: 45, guest: 'Emily Holdman', firm: 'Permanent Equity' },
+  { episode: 44, guest: 'Multiple Experts', firm: 'Various' },
+  { episode: 43, guest: 'Multiple Experts', firm: 'Various' },
+  { episode: 42, guest: 'Nick Shaw', firm: 'Mirrorbox Leadership Lab' },
+  { episode: 41, guest: 'Dave Feierstein', firm: 'Ronin Equity Partners' },
+  { episode: 40, guest: 'Eric Jensen', firm: 'Nordic Capital' },
+  { episode: 39, guest: 'Jay Hernandez', firm: 'Raymond James' },
+  { episode: 38, guest: 'Mark Steenhoek & Bryan West', firm: 'The Stephens Group & Resurgens Technology Partners' },
+  { episode: 37, guest: 'Scott Estill', firm: 'Lancor' },
+  { episode: 36, guest: 'Sean Mooney', firm: 'BluWave' },
+  { episode: 35, guest: 'Andrew Greenberg', firm: 'Greenberg Variations Capital' },
+  { episode: 34, guest: 'Joe DeLuca', firm: 'NewSpring Capital' },
+  { episode: 33, guest: 'Andrew Joy', firm: 'Hidden Harbor Capital Partners' },
+  { episode: 32, guest: 'Ed Hine', firm: 'Cold Bore Capital' },
+  { episode: 31, guest: 'Matt Cole', firm: 'SBJ Capital' },
+  { episode: 30, guest: 'Scott Becker', firm: 'McGuireWoods' },
+  { episode: 29, guest: 'Gabe Mesanza', firm: 'Huron Capital' },
+  { episode: 28, guest: 'John Kirk', firm: 'Tuckerman Capital' },
+  { episode: 27, guest: 'Scott Phillips', firm: 'Orix Capital Partners' },
+  { episode: 26, guest: 'Paul Stansik', firm: 'ParkerGale Capital' },
+  { episode: 25, guest: 'AI Roundtable Panel', firm: 'Multiple Firms' },
+  { episode: 24, guest: 'Brit Yonge', firm: 'Corsair Capital' },
+  { episode: 23, guest: 'Sean Mooney', firm: 'BluWave' },
+  { episode: 22, guest: 'Cici Zheng', firm: 'ParkerGale Capital' },
+  { episode: 21, guest: 'David Hellier', firm: 'Bertram Capital' },
+  { episode: 20, guest: 'Sean Mooney', firm: 'BluWave' },
+  { episode: 19, guest: 'John Huhn', firm: 'Compass Group Equity Partners' },
+  { episode: 18, guest: 'Brian Adams', firm: 'Excelsior Capital' },
+  { episode: 17, guest: 'Hernan Saenz', firm: 'Bain & Company' },
+  { episode: 16, guest: 'Sean Mooney', firm: 'BluWave' },
+  { episode: 15, guest: 'Charlie Gifford', firm: 'New Heritage Partners' },
+  { episode: 14, guest: 'Sean Mooney', firm: 'BluWave' },
+  { episode: 13, guest: 'Doug Horn & Mohit Kansal', firm: 'Clairvest' },
+  { episode: 12, guest: 'Demetrios Dounis', firm: 'Heartwood Partners' },
+  { episode: 11, guest: 'Marshall Phelps', firm: 'MidOcean Partners' },
+  { episode: 10, guest: 'Sean Mooney', firm: 'BluWave' },
+  { episode: 9, guest: 'Sean Mooney', firm: 'BluWave' },
+  { episode: 8, guest: 'Sean Mooney', firm: 'BluWave' },
+  { episode: 7, guest: 'Sean Mooney', firm: 'BluWave' },
+  { episode: 6, guest: 'Devin Mathews', firm: 'ParkerGale' },
+  { episode: 5, guest: 'Brian Bank', firm: 'Kirkland & Ellis' },
+  { episode: 4, guest: 'Sean Mooney', firm: 'BluWave' },
+  { episode: 3, guest: 'Doug McCormick', firm: 'HCI Equity Partners' },
+  { episode: 2, guest: 'Sean Mooney', firm: 'BluWave' },
+  { episode: 1, guest: 'Sean Mooney', firm: 'BluWave' }
+];
+
+let epSortField = 'episode';
+let epSortAsc = false; // newest first by default
+
+function sortEpisodesBy(field) {
+  if (epSortField === field) epSortAsc = !epSortAsc;
+  else { epSortField = field; epSortAsc = field !== 'episode'; }
+  renderEpisodes();
+}
+
+function renderEpisodes() {
+  const search = (document.getElementById('epSearchInput').value || '').toLowerCase().trim();
+  let eps = EPISODES.slice();
+
+  if (search) {
+    eps = eps.filter(e =>
+      e.guest.toLowerCase().includes(search) ||
+      e.firm.toLowerCase().includes(search) ||
+      String(e.episode).includes(search)
+    );
+  }
+
+  eps.sort((a, b) => {
+    let av, bv;
+    if (epSortField === 'episode') { av = a.episode; bv = b.episode; return epSortAsc ? av - bv : bv - av; }
+    av = (a[epSortField] || '').toLowerCase();
+    bv = (b[epSortField] || '').toLowerCase();
+    const cmp = av.localeCompare(bv);
+    return epSortAsc ? cmp : -cmp;
+  });
+
+  const tbody = document.getElementById('epTableBody');
+  tbody.innerHTML = '';
+  const emptyMsg = document.getElementById('epEmptyMsg');
+
+  if (eps.length === 0) {
+    emptyMsg.style.display = 'block';
+  } else {
+    emptyMsg.style.display = 'none';
+    eps.forEach(e => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td><span class="ep-num">${e.episode}</span></td><td>${esc(e.guest)}</td><td>${esc(e.firm)}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  document.getElementById('epStats').textContent = `${EPISODES.length} episodes · showing ${eps.length}`;
+}
+
+document.getElementById('epSearchInput').addEventListener('input', renderEpisodes);
 
 importFromUrl();
 
