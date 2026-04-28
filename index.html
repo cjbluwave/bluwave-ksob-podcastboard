@@ -657,12 +657,25 @@ function toggleSent(id) {
   render();
 }
 
-function draftInOutlook(id) {
+async function draftInOutlook(id) {
   const g = GUESTS.find(x => x.id === id);
   if (!g || !g.email) return;
-  const subject = encodeURIComponent('Karma School of Business — Podcast Guest Invitation');
-  const body = encodeURIComponent(buildEmail(g));
-  window.location.href = `mailto:${encodeURIComponent(g.email)}?subject=${subject}&body=${body}`;
+  const subject = 'Karma School of Business — Podcast Guest Invitation';
+  const body = buildEmail(g);
+
+  // Try local helper (attaches PDF automatically)
+  try {
+    const r = await fetch('http://127.0.0.1:9876/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to: g.email, subject, body }),
+      signal: AbortSignal.timeout(4000)
+    });
+    if (r.ok) return; // Outlook opened with attachment ✓
+  } catch (_) {}
+
+  // Fallback: mailto: (no attachment — run helper.js to enable attachment)
+  window.location.href = `mailto:${encodeURIComponent(g.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
 document.getElementById('modalOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
