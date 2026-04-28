@@ -147,13 +147,80 @@
     .btn-modal-copy { padding: 7px 14px; }
 
     .empty { text-align: center; padding: 40px; color: #6c757d; }
+
+    /* Password gate */
+    #authGate {
+      position: fixed; inset: 0; z-index: 2000;
+      background: #f8f9fa;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #authGate.hidden { display: none; }
+    .auth-box {
+      background: white; border-radius: 10px; padding: 32px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+      width: 90%; max-width: 360px; text-align: center;
+    }
+    .auth-box h2 { color: #1a2744; font-size: 1.1rem; margin-bottom: 4px; }
+    .auth-box p { font-size: 0.8rem; color: #6c757d; margin-bottom: 16px; }
+    .auth-box input {
+      width: 100%; padding: 8px 12px; border: 1px solid #ced4da;
+      border-radius: 6px; font-size: 0.9rem; outline: none; margin-bottom: 8px;
+    }
+    .auth-box input:focus { border-color: #1a2744; }
+    .auth-box .auth-err { color: #dc3545; font-size: 0.78rem; margin-bottom: 8px; display: none; }
+    .auth-box button {
+      width: 100%; padding: 9px; background: #1a2744; color: white;
+      border: none; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer;
+    }
+    .auth-box button:hover { background: #243260; }
+    .auth-logo {
+      width: 48px; height: 48px; background: #1a2744; border-radius: 10px;
+      display: inline-flex; align-items: center; justify-content: center;
+      color: white; font-weight: 700; font-size: 1.4rem; margin-bottom: 12px;
+    }
+
+    /* Add Guest modal */
+    #addGuestOverlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5); z-index: 1000;
+      align-items: center; justify-content: center;
+    }
+    #addGuestOverlay.open { display: flex; }
+    .add-guest-form label { display: block; font-size: 0.8rem; font-weight: 600; color: #495057; margin-bottom: 4px; }
+    .add-guest-form label .req { color: #dc3545; }
+    .add-guest-form input, .add-guest-form select {
+      width: 100%; padding: 7px 10px; border: 1px solid #ced4da;
+      border-radius: 6px; font-size: 0.875rem; outline: none; margin-bottom: 12px;
+    }
+    .add-guest-form input:focus, .add-guest-form select:focus { border-color: #1a2744; }
+    .btn-add-new { background: #198754; color: white; padding: 5px 12px; }
+    .btn-add-new:hover { opacity: 0.88; }
   </style>
 </head>
 <body>
 
-<header>
-  <h1>Karma School of Business — Podcast Guest Board</h1>
-  <p>Outreach tracker · BluWave</p>
+<!-- Password gate -->
+<div id="authGate">
+  <div class="auth-box">
+    <div class="auth-logo">K</div>
+    <h2>KSOB PodcastBoard</h2>
+    <p>Enter password to continue</p>
+    <form id="authForm" onsubmit="return checkAuth(event)">
+      <input type="password" id="authInput" placeholder="Password" autofocus />
+      <div class="auth-err" id="authErr">Incorrect password. Try again.</div>
+      <button type="submit">Enter</button>
+    </form>
+  </div>
+</div>
+
+<div id="appContent" style="display:none">
+
+<header style="display:flex;align-items:center;justify-content:space-between">
+  <div>
+    <h1>Karma School of Business — Podcast Guest Board</h1>
+    <p>Outreach tracker · BluWave</p>
+  </div>
+  <button class="btn btn-add-new" onclick="openAddGuest()">+ Add New</button>
 </header>
 
 <div class="controls">
@@ -196,6 +263,37 @@
 
 <div class="empty" id="emptyMsg" style="display:none">No guests match the current filters.</div>
 
+<!-- Add Guest modal -->
+<div id="addGuestOverlay">
+  <div class="modal">
+    <h2>Add New Guest</h2>
+    <div class="modal-sub">Fill in the details and click Save.</div>
+    <form class="add-guest-form" id="addGuestForm" onsubmit="return saveNewGuest(event)">
+      <label>Name <span class="req">*</span></label>
+      <input type="text" id="agName" required />
+      <label>Company <span class="req">*</span></label>
+      <input type="text" id="agCompany" required />
+      <label>Email</label>
+      <input type="email" id="agEmail" />
+      <label>Status</label>
+      <select id="agStatus">
+        <option value="To Reach Out">To Reach Out</option>
+        <option value="Reached Out (1st Attempt)">Reached Out (1st Attempt)</option>
+        <option value="Reached Out (3rd Attempt)">Reached Out (3rd Attempt)</option>
+        <option value="Unresponsive">Unresponsive</option>
+        <option value="On Ice">On Ice</option>
+        <option value="Interested, but not right now">Interested, but not right now</option>
+        <option value="Coordinating (w/ Guest)">Coordinating (w/ Guest)</option>
+        <option value="Coordinating / More Info">Coordinating / More Info</option>
+      </select>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-close-modal" onclick="closeAddGuest()">Cancel</button>
+        <button type="submit" class="btn btn-add-new">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- Email modal -->
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal">
@@ -209,7 +307,86 @@
   </div>
 </div>
 
+</div><!-- /appContent -->
+
 <script>
+// ---------- Password gate ----------
+const AUTH_KEY = 'ksob_auth';
+const AUTH_PASS = 'K@rm@2026!';
+
+function checkAuth(e) {
+  e.preventDefault();
+  const val = document.getElementById('authInput').value;
+  if (val === AUTH_PASS) {
+    sessionStorage.setItem(AUTH_KEY, '1');
+    unlockApp();
+  } else {
+    document.getElementById('authErr').style.display = 'block';
+    document.getElementById('authInput').value = '';
+    document.getElementById('authInput').focus();
+  }
+  return false;
+}
+
+function unlockApp() {
+  document.getElementById('authGate').classList.add('hidden');
+  document.getElementById('appContent').style.display = '';
+}
+
+// Auto-unlock if already authenticated this session
+if (sessionStorage.getItem(AUTH_KEY) === '1') {
+  document.addEventListener('DOMContentLoaded', unlockApp);
+}
+
+// ---------- Custom guests (localStorage) ----------
+const CUSTOM_GUESTS_KEY = 'ksob_custom_guests';
+
+function loadCustomGuests() {
+  try {
+    return JSON.parse(localStorage.getItem(CUSTOM_GUESTS_KEY) || '[]');
+  } catch { return []; }
+}
+
+function saveCustomGuests(list) {
+  try { localStorage.setItem(CUSTOM_GUESTS_KEY, JSON.stringify(list)); } catch {}
+}
+
+// ---------- Add Guest modal ----------
+function openAddGuest() {
+  document.getElementById('addGuestForm').reset();
+  document.getElementById('addGuestOverlay').classList.add('open');
+  document.getElementById('agName').focus();
+}
+
+function closeAddGuest() {
+  document.getElementById('addGuestOverlay').classList.remove('open');
+}
+
+function saveNewGuest(e) {
+  e.preventDefault();
+  const name = document.getElementById('agName').value.trim();
+  const company = document.getElementById('agCompany').value.trim();
+  const email = document.getElementById('agEmail').value.trim();
+  const status = document.getElementById('agStatus').value;
+  if (!name || !company) return false;
+
+  const maxId = GUESTS.reduce((m, g) => Math.max(m, g.id), 0);
+  const guest = { name, company, email, status, id: maxId + 1 };
+  GUESTS.push(guest);
+
+  // Persist
+  const custom = loadCustomGuests();
+  custom.push({ name, company, email, status });
+  saveCustomGuests(custom);
+
+  closeAddGuest();
+  render();
+  return false;
+}
+
+document.getElementById('addGuestOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeAddGuest(); });
+
+// ---------- Guest data ----------
 const GUESTS = [
   { name: 'TBD @Main Post', company: 'Main Post Partners', email: 'thyland@mainpostpartners.com', status: 'Unresponsive' },
   { name: 'Joe Rondinelli', company: 'Frontenac', email: 'jrondinelli@frontenac.com', status: 'Unresponsive' },
@@ -382,6 +559,12 @@ const GUESTS = [
 ];
 
 GUESTS.forEach((g, i) => g.id = i);
+
+// Merge any previously saved custom guests
+loadCustomGuests().forEach(cg => {
+  const maxId = GUESTS.reduce((m, g) => Math.max(m, g.id), 0);
+  GUESTS.push({ ...cg, id: maxId + 1 });
+});
 
 let sortField = 'status';
 let sortAsc = true;
