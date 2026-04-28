@@ -128,7 +128,7 @@
     }
     .modal h2 { font-size: 1rem; font-weight: 700; margin-bottom: 4px; color: #1a2744; }
     .modal .modal-sub { font-size: 0.8rem; color: #6c757d; margin-bottom: 16px; }
-    .modal pre {
+    .modal-body {
       background: #f8f9fa;
       border: 1px solid #dee2e6;
       border-radius: 6px;
@@ -138,6 +138,9 @@
       white-space: pre-wrap;
       line-height: 1.6;
     }
+    .modal-body a { color: #0d6efd; }
+    .modal-body ul { margin: 0 0 0 18px; padding: 0; }
+    .modal-body li { margin-bottom: 4px; }
     .modal-actions { display: flex; gap: 8px; margin-top: 14px; justify-content: flex-end; }
     .btn-close-modal { background: #e9ecef; color: #212529; padding: 7px 14px; }
     .btn-close-modal:hover { background: #dee2e6; }
@@ -195,7 +198,7 @@
   <div class="modal">
     <h2 id="modalTitle">Personalized Email</h2>
     <div class="modal-sub" id="modalSub"></div>
-    <pre id="modalBody"></pre>
+    <div class="modal-body" id="modalBody"></div>
     <div class="modal-actions">
       <button class="btn btn-copy btn-modal-copy" id="modalCopyBtn" onclick="copyModalEmail()">Copy Email</button>
       <button class="btn btn-close-modal" onclick="closeModal()">Close</button>
@@ -380,6 +383,7 @@ GUESTS.forEach((g, i) => g.id = i);
 let sortField = 'status';
 let sortAsc = true;
 let currentEmailText = '';
+let currentEmailHTML = '';
 
 // In-memory fallback so Mark Sent works in private/incognito browsers too
 let _memSentState = {};
@@ -412,7 +416,6 @@ function getFirstName(name) {
 function buildEmail(guest) {
   const firstName = getFirstName(guest.name);
   const company = guest.company || 'your firm';
-  // Grammatically correct possessive: "Associates'" not "Associates's"
   const possessive = company.endsWith('s') ? `${company}'` : `${company}'s`;
   return `Hi ${firstName},
 
@@ -423,14 +426,32 @@ The podcast is hosted by Sean Mooney, BluWave's Founder and CEO, and we've publi
 I've attached an info deck that provides more details on the podcast's mission, key audience, episode engagement, and FAQs.
 
 In the meantime, I'll include some examples of episodes below if you'd like to take a look:
-- Pam Hendrickson, Vice Chairman of The Riverside Company and Chairman of the Board of the AIC
-- Darren Herman, Managing Director at Bain Capital
-- Suzanne Yoon, Founder and Managing Partner at Kinzie Capital.
+- Pam Hendrickson (https://www.bluwave.net/podcasts/pam-hendrickson-riverside/), Vice Chairman of The Riverside Company and Chairman of the Board of the AIC
+- Darren Herman (https://www.bluwave.net/podcasts/darren-herman-bain-capital/), Managing Director at Bain Capital
+- Suzanne Yoon (https://www.bluwave.net/podcasts/suzanne-yoon-kinzie-capital/), Founder and Managing Partner at Kinzie Capital
 
 Let me know if you have any questions or are interested in joining!
 
 Thanks,
 Chris`;
+}
+
+function buildEmailHTML(guest) {
+  const firstName = getFirstName(guest.name);
+  const company = guest.company || 'your firm';
+  const possessive = company.endsWith('s') ? `${company}'` : `${company}'s`;
+  return `<p>Hi ${esc(firstName)},</p>
+<p>I help coordinate BluWave's podcast, <a href="https://www.bluwave.net/podcasts/">Karma School of Business</a>, and we'd love to invite you on as a guest to feature your insights as well as ${esc(possessive)} innovative practices in private equity!</p>
+<p>The podcast is hosted by Sean Mooney, BluWave's Founder and CEO, and we've published over 100 episodes featuring senior PE professionals and firm founders. Our goal is to humanize the industry and act as a resource for private equity professionals and other business builders seeking to expand their knowledge and skills.</p>
+<p>I've attached an info deck that provides more details on the podcast's mission, key audience, episode engagement, and FAQs.</p>
+<p>In the meantime, I'll include some examples of episodes below if you'd like to take a look:</p>
+<ul>
+<li><a href="https://www.bluwave.net/podcasts/pam-hendrickson-riverside/">Pam Hendrickson</a>, Vice Chairman of The Riverside Company and Chairman of the Board of the AIC</li>
+<li><a href="https://www.bluwave.net/podcasts/darren-herman-bain-capital/">Darren Herman</a>, Managing Director at Bain Capital</li>
+<li><a href="https://www.bluwave.net/podcasts/suzanne-yoon-kinzie-capital/">Suzanne Yoon</a>, Founder and Managing Partner at Kinzie Capital</li>
+</ul>
+<p>Let me know if you have any questions or are interested in joining!</p>
+<p>Thanks,<br>Chris</p>`;
 }
 
 function badgeClass(status, sent) {
@@ -545,9 +566,10 @@ function openEmail(id) {
   const g = GUESTS.find(x => x.id === id);
   if (!g) return;
   currentEmailText = buildEmail(g);
+  currentEmailHTML = buildEmailHTML(g);
   document.getElementById('modalTitle').textContent = `Email to ${g.name}`;
   document.getElementById('modalSub').textContent = (g.company || '') + (g.email ? ` · ${g.email}` : '');
-  document.getElementById('modalBody').textContent = currentEmailText;
+  document.getElementById('modalBody').innerHTML = currentEmailHTML;
   const btn = document.getElementById('modalCopyBtn');
   btn.textContent = 'Copy Email';
   btn.className = 'btn btn-copy btn-modal-copy';
@@ -558,26 +580,35 @@ function closeModal() {
   document.getElementById('modalOverlay').classList.remove('open');
 }
 
-function copyModalEmail() {
-  navigator.clipboard.writeText(currentEmailText).then(() => {
-    const btn = document.getElementById('modalCopyBtn');
+function copyRich(htmlContent, plainContent, btn, defaultLabel) {
+  const doFallback = () => navigator.clipboard.writeText(plainContent).then(() => {
     btn.textContent = 'Copied!';
-    btn.className = 'btn btn-copy copied btn-modal-copy';
-    setTimeout(() => { btn.textContent = 'Copy Email'; btn.className = 'btn btn-copy btn-modal-copy'; }, 2000);
+    btn.className = btn.className.replace(/\bcopied\b/, '') + ' copied';
+    setTimeout(() => { btn.textContent = defaultLabel; btn.className = btn.className.replace(/\bcopied\b/, ''); }, 2000);
   });
+  try {
+    navigator.clipboard.write([new ClipboardItem({
+      'text/html': new Blob([htmlContent], {type: 'text/html'}),
+      'text/plain': new Blob([plainContent], {type: 'text/plain'})
+    })]).then(() => {
+      btn.textContent = 'Copied!';
+      btn.className = btn.className.replace(/\bcopied\b/, '') + ' copied';
+      setTimeout(() => { btn.textContent = defaultLabel; btn.className = btn.className.replace(/\bcopied\b/, ''); }, 2000);
+    }).catch(doFallback);
+  } catch { doFallback(); }
+}
+
+function copyModalEmail() {
+  const btn = document.getElementById('modalCopyBtn');
+  copyRich(currentEmailHTML, currentEmailText, btn, 'Copy Email');
 }
 
 function copyEmail(id) {
   const g = GUESTS.find(x => x.id === id);
   if (!g) return;
-  navigator.clipboard.writeText(buildEmail(g)).then(() => {
-    const btn = document.getElementById(`copy-${id}`);
-    if (btn) {
-      btn.textContent = 'Copied!';
-      btn.className = 'btn btn-copy copied';
-      setTimeout(() => { btn.textContent = 'Copy'; btn.className = 'btn btn-copy'; }, 2000);
-    }
-  });
+  const btn = document.getElementById(`copy-${id}`);
+  if (!btn) return;
+  copyRich(buildEmailHTML(g), buildEmail(g), btn, 'Copy');
 }
 
 function toggleSent(id) {
