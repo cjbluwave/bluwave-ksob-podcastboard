@@ -101,6 +101,8 @@
     .btn-sent.is-sent { background: #198754; }
     .btn-email { background: transparent; border: 1px solid #1a2744; color: #1a2744; }
     .btn-email:hover { background: #1a2744; color: white; }
+    .btn-mail { background: transparent; border: 1px solid #0d6efd; color: #0d6efd; }
+    .btn-mail:hover { background: #0d6efd; color: white; }
 
     .actions { display: flex; gap: 4px; align-items: center; flex-wrap: nowrap; }
 
@@ -503,6 +505,7 @@ function render() {
           <div class="actions">
             <button class="btn btn-email" onclick="openEmail(${g.id})">Email</button>
             <button class="btn btn-copy" id="copy-${g.id}" onclick="copyEmail(${g.id})">Copy</button>
+            ${g.email ? `<button class="btn btn-mail" onclick="draftInMail(${g.id})">Draft in Mail</button>` : ''}
             <button class="btn btn-sent ${sent ? 'is-sent' : ''}" onclick="toggleSent(${g.id})">
               ${sentLabel}
             </button>
@@ -586,6 +589,14 @@ function toggleSent(id) {
   }
   saveSentState(s);
   render();
+}
+
+function draftInMail(id) {
+  const g = GUESTS.find(x => x.id === id);
+  if (!g || !g.email) return;
+  const subject = encodeURIComponent('Karma School of Business — Podcast Guest Invitation');
+  const body = encodeURIComponent(buildEmail(g));
+  window.location.href = `mailto:${encodeURIComponent(g.email)}?subject=${subject}&body=${body}`;
 }
 
 document.getElementById('modalOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
