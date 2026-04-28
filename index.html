@@ -379,8 +379,22 @@ let sortField = 'status';
 let sortAsc = true;
 let currentEmailText = '';
 
+// In-memory fallback so Mark Sent works in private/incognito browsers too
+let _memSentState = {};
+
 function getSentState() {
-  try { return JSON.parse(localStorage.getItem('ksob_sent') || '{}'); } catch { return {}; }
+  try {
+    const stored = JSON.parse(localStorage.getItem('ksob_sent') || '{}');
+    _memSentState = stored;
+    return stored;
+  } catch {
+    return {..._memSentState};
+  }
+}
+
+function saveSentState(s) {
+  _memSentState = {...s};
+  try { localStorage.setItem('ksob_sent', JSON.stringify(s)); } catch { /* private browsing — memory only */ }
 }
 
 function getFirstName(name) {
@@ -472,7 +486,11 @@ function render() {
   } else {
     emptyMsg.style.display = 'none';
     guests.forEach((g, idx) => {
-      const sent = !!sentState[g.id];
+      const sentVal = sentState[g.id]; // ISO string or undefined
+      const sent = !!sentVal;
+      const sentLabel = sent
+        ? '✓ Sent ' + new Date(sentVal).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'2-digit'})
+        : 'Mark Sent';
       const tr = document.createElement('tr');
       if (sent) tr.className = 'sent-row';
       const rowNum = idx + 1;
@@ -486,7 +504,7 @@ function render() {
             <button class="btn btn-email" onclick="openEmail(${g.id})">Email</button>
             <button class="btn btn-copy" id="copy-${g.id}" onclick="copyEmail(${g.id})">Copy</button>
             <button class="btn btn-sent ${sent ? 'is-sent' : ''}" onclick="toggleSent(${g.id})">
-              ${sent ? '✓ Sent' : 'Mark Sent'}
+              ${sentLabel}
             </button>
           </div>
         </td>`;
@@ -561,9 +579,12 @@ function copyEmail(id) {
 
 function toggleSent(id) {
   const s = getSentState();
-  s[id] = !s[id];
-  if (!s[id]) delete s[id];
-  localStorage.setItem('ksob_sent', JSON.stringify(s));
+  if (s[id]) {
+    delete s[id];
+  } else {
+    s[id] = new Date().toISOString();
+  }
+  saveSentState(s);
   render();
 }
 
