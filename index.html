@@ -222,6 +222,25 @@
     #pastEpisodesPanel tbody tr:hover { background: #f1f3f9; }
     #pastEpisodesPanel tbody td { padding: 9px 14px; font-size: 0.875rem; }
     .ep-num { color: #6c757d; font-weight: 600; font-size: 0.8rem; }
+
+    /* Schedule panel */
+    #schedulePanel table { width: 100%; border-collapse: collapse; }
+    #schedulePanel thead th {
+      background: #1a2744; color: white; padding: 10px 14px;
+      text-align: left; font-size: 0.78rem; font-weight: 600;
+      letter-spacing: 0.04em; text-transform: uppercase;
+      user-select: none; white-space: nowrap;
+    }
+    #schedulePanel tbody tr { border-bottom: 1px solid #e9ecef; background: #fff; }
+    #schedulePanel tbody tr:hover { background: #f1f3f9; }
+    #schedulePanel tbody td { padding: 9px 14px; font-size: 0.875rem; }
+    #schedulePanel tbody td input {
+      width: 100%; padding: 5px 8px; border: 1px solid #ced4da;
+      border-radius: 4px; font-size: 0.85rem; outline: none;
+    }
+    #schedulePanel tbody td input:focus { border-color: #1a2744; }
+    .btn-remove-row { background: transparent; border: 1px solid #dc3545; color: #dc3545; }
+    .btn-remove-row:hover { background: #dc3545; color: white; }
   </style>
 </head>
 <body>
@@ -253,6 +272,7 @@
   <div class="header-tabs">
     <button class="header-tab active" onclick="switchTab('outreach')">Outreach</button>
     <button class="header-tab" onclick="switchTab('pastEpisodes')">Past Episodes</button>
+    <button class="header-tab" onclick="switchTab('schedule')">Schedule</button>
   </div>
 </header>
 
@@ -319,6 +339,28 @@
     </table>
   </div>
   <div class="empty" id="epEmptyMsg" style="display:none">No episodes match your search.</div>
+</div>
+
+<div id="schedulePanel" class="tab-panel">
+  <div class="controls">
+    <button class="btn btn-add-new" onclick="addScheduleRow()">+ Add Guest</button>
+  </div>
+  <div class="stats" id="schedStats"></div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Guest Name</th>
+          <th>Firm / Title</th>
+          <th>Scheduled Date</th>
+          <th>Notes / Status</th>
+          <th style="width:70px"></th>
+        </tr>
+      </thead>
+      <tbody id="schedTableBody"></tbody>
+    </table>
+  </div>
+  <div class="empty" id="schedEmptyMsg" style="display:none">No scheduled guests yet.</div>
 </div>
 
 <!-- Add Guest modal -->
@@ -967,11 +1009,16 @@ function switchTab(tab) {
     document.getElementById('outreachPanel').classList.add('active');
     document.querySelectorAll('.header-tab')[0].classList.add('active');
     document.getElementById('addNewBtn').style.display = '';
-  } else {
+  } else if (tab === 'pastEpisodes') {
     document.getElementById('pastEpisodesPanel').classList.add('active');
     document.querySelectorAll('.header-tab')[1].classList.add('active');
     document.getElementById('addNewBtn').style.display = 'none';
     renderEpisodes();
+  } else if (tab === 'schedule') {
+    document.getElementById('schedulePanel').classList.add('active');
+    document.querySelectorAll('.header-tab')[2].classList.add('active');
+    document.getElementById('addNewBtn').style.display = 'none';
+    renderSchedule();
   }
 }
 
@@ -1170,6 +1217,61 @@ function renderEpisodes() {
 }
 
 document.getElementById('epSearchInput').addEventListener('input', renderEpisodes);
+
+// ---------- Schedule tab ----------
+const SCHED_KEY = 'ksob_schedule';
+
+function loadSchedule() {
+  try { return JSON.parse(localStorage.getItem(SCHED_KEY) || '[]'); } catch { return []; }
+}
+
+function saveSchedule(list) {
+  try { localStorage.setItem(SCHED_KEY, JSON.stringify(list)); } catch {}
+}
+
+function addScheduleRow() {
+  const list = loadSchedule();
+  list.push({ guest: '', firm: '', date: '', notes: '' });
+  saveSchedule(list);
+  renderSchedule();
+}
+
+function removeScheduleRow(idx) {
+  const list = loadSchedule();
+  list.splice(idx, 1);
+  saveSchedule(list);
+  renderSchedule();
+}
+
+function updateScheduleField(idx, field, value) {
+  const list = loadSchedule();
+  if (list[idx]) { list[idx][field] = value; saveSchedule(list); }
+}
+
+function renderSchedule() {
+  const list = loadSchedule();
+  const tbody = document.getElementById('schedTableBody');
+  const emptyMsg = document.getElementById('schedEmptyMsg');
+  tbody.innerHTML = '';
+
+  if (list.length === 0) {
+    emptyMsg.style.display = 'block';
+  } else {
+    emptyMsg.style.display = 'none';
+    list.forEach((row, idx) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><input type="text" value="${esc(row.guest)}" placeholder="Guest name" onchange="updateScheduleField(${idx},'guest',this.value)" /></td>
+        <td><input type="text" value="${esc(row.firm)}" placeholder="Firm / Title" onchange="updateScheduleField(${idx},'firm',this.value)" /></td>
+        <td><input type="date" value="${esc(row.date)}" onchange="updateScheduleField(${idx},'date',this.value)" /></td>
+        <td><input type="text" value="${esc(row.notes)}" placeholder="Notes / Status" onchange="updateScheduleField(${idx},'notes',this.value)" /></td>
+        <td><button class="btn btn-remove-row" onclick="removeScheduleRow(${idx})">Remove</button></td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  document.getElementById('schedStats').textContent = `${list.length} scheduled guest${list.length !== 1 ? 's' : ''}`;
+}
 
 importFromUrl();
 
