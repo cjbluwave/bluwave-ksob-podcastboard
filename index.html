@@ -1220,6 +1220,30 @@ document.getElementById('epSearchInput').addEventListener('input', renderEpisode
 
 // ---------- Schedule tab ----------
 const SCHED_KEY = 'ksob_schedule';
+const SCHED_SEED_KEY = 'ksob_schedule_seeded_v1';
+
+const DEFAULT_SCHEDULE = [
+  { guest: 'Bobby Ocampo', firm: '', date: '', notes: 'Scheduled' },
+  { guest: 'Bob Root', firm: '', date: '', notes: 'Scheduled' },
+  { guest: 'Dave Antori', firm: '', date: '', notes: 'Scheduled' },
+  { guest: 'Tim Billings', firm: '', date: '', notes: 'Scheduled' },
+  { guest: 'Jairo Romero', firm: '', date: '', notes: 'Scheduled' },
+  { guest: 'Carr Preston', firm: '', date: '', notes: 'Scheduling' },
+  { guest: 'Scott VandeKerkhoff', firm: '', date: '', notes: 'Scheduling' },
+  { guest: 'Jarrett Turner', firm: '', date: '', notes: 'Scheduling' },
+  { guest: 'Grace Kim', firm: '', date: '', notes: 'Scheduling' },
+  { guest: 'Joe Rondinelli', firm: '', date: '', notes: 'Scheduling' },
+];
+
+// Seed default schedule guests on first visit
+(function seedSchedule() {
+  if (localStorage.getItem(SCHED_SEED_KEY)) return;
+  const existing = JSON.parse(localStorage.getItem(SCHED_KEY) || '[]');
+  if (existing.length === 0) {
+    localStorage.setItem(SCHED_KEY, JSON.stringify(DEFAULT_SCHEDULE));
+  }
+  localStorage.setItem(SCHED_SEED_KEY, '1');
+})();
 
 function loadSchedule() {
   try { return JSON.parse(localStorage.getItem(SCHED_KEY) || '[]'); } catch { return []; }
