@@ -1220,7 +1220,7 @@ document.getElementById('epSearchInput').addEventListener('input', renderEpisode
 
 // ---------- Schedule tab ----------
 const SCHED_KEY = 'ksob_schedule';
-const SCHED_SEED_KEY = 'ksob_schedule_seeded_v1';
+const SCHED_SEED_KEY = 'ksob_schedule_seeded_v2';
 
 const DEFAULT_SCHEDULE = [
   { guest: 'Bobby Ocampo', firm: '', date: '', notes: 'Scheduled' },
@@ -1233,14 +1233,21 @@ const DEFAULT_SCHEDULE = [
   { guest: 'Jarrett Turner', firm: '', date: '', notes: 'Scheduling' },
   { guest: 'Grace Kim', firm: '', date: '', notes: 'Scheduling' },
   { guest: 'Joe Rondinelli', firm: '', date: '', notes: 'Scheduling' },
+  { guest: 'Jon Haas', firm: 'Clarion Capital', date: '', notes: 'Scheduling' },
+  { guest: 'Adi Filipovic', firm: 'Resurgens Tech', date: '', notes: 'Scheduling' },
+  { guest: 'Pat Donegan', firm: 'Blueridge Partners', date: '', notes: 'Scheduling' },
 ];
 
-// Seed default schedule guests on first visit
+// Seed default schedule guests on first visit (or merge new guests on version bump)
 (function seedSchedule() {
   if (localStorage.getItem(SCHED_SEED_KEY)) return;
   const existing = JSON.parse(localStorage.getItem(SCHED_KEY) || '[]');
   if (existing.length === 0) {
     localStorage.setItem(SCHED_KEY, JSON.stringify(DEFAULT_SCHEDULE));
+  } else {
+    const names = new Set(existing.map(e => e.guest));
+    const merged = [...existing, ...DEFAULT_SCHEDULE.filter(d => !names.has(d.guest))];
+    localStorage.setItem(SCHED_KEY, JSON.stringify(merged));
   }
   localStorage.setItem(SCHED_SEED_KEY, '1');
 })();
